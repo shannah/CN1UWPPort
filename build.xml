@@ -86,7 +86,7 @@
     
     
     
-    <target name="setup" description="Setup a CN1 project to do UWP builds">
+    <target name="setup" depends="configure,get-ikvm" description="Setup a CN1 project to do UWP builds">
         <fail message="Please specify the project to set up using the codename1.project.dir property.  E.g. add -Dcodename1.project.dir=path/to/project to your command line args.">
             <condition>
                 <not><isset property="codename1.project.dir"/></not>
@@ -119,5 +119,21 @@
             
         </propertyfile>
         
+    </target>
+    
+    <target name="configure" description="Configures the dependencies">
+        <mkdir dir="TestProject/lib"/>
+        
+        <get src="https://github.com/shannah/binaries/raw/master/cn1-common/CLDC11.jar" dest="TestProject/lib/CLDC11.jar" skipexisting="true"/>
+        <get skipexisting="true" src="https://github.com/shannah/binaries/raw/master/cn1-common/CodeNameOneBuildClient.jar" dest="TestProject/CodeNameOneBuildClient.jar"/>
+        <get skipexisting="true" src="https://github.com/shannah/binaries/raw/master/cn1-common/JavaSE.jar" dest="TestProject/JavaSE.jar"/>
+        <get skipexisting="true" src="https://github.com/shannah/binaries/raw/master/cn1-common/CodenameOne.jar" dest="TestProject/lib/CodenameOne.jar"/>
+        <get skipexisting="true" src="https://github.com/shannah/binaries/raw/master/cn1-common/CodenameOne_SRC.zip" dest="TestProject/lib/CodenameOne_SRC.zip"/>
+        <propertyfile
+            file="TestProject/nbproject/project.properties"
+            comment="My properties">
+          <entry  key="file.reference.CodenameOne.jar" value="lib/CodenameOne.jar"/>
+          <entry  key="file.reference.JavaSE.jar" value="JavaSE.jar"/>
+        </propertyfile>
     </target>
 </project>
