@@ -7,8 +7,8 @@
 <!-- the Compile on Save feature is turned off for the project. -->
 <!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
 <!-- in the project's Project Properties dialog box.-->
-<project name="CN1UWPPort" default="default" basedir=".">
-    <description>Builds, tests, and runs the project CN1UWPPort.</description>
+<project name="UWPImplementationFactory" default="default" basedir=".">
+    <description>Builds, tests, and runs the project UWPImplementationFactory.</description>
     <import file="nbproject/build-impl.xml"/>
     <!--
 
@@ -58,7 +58,7 @@
 
     An example of overriding the target for project execution could look like this:
 
-        <target name="run" depends="CN1UWPPort-impl.jar">
+        <target name="run" depends="UWPImplementationFactory-impl.jar">
             <exec dir="bin" executable="launcher.exe">
                 <arg file="${dist.jar}"/>
             </exec>
@@ -70,54 +70,7 @@
     nbproject/build-impl.xml file. 
 
     -->
-    
-    <property name="ikvm.relpath" value="ikvm-uwp/ikvm-winrt-v3"/>
-    <target name="file-checks">
-        <available file="${ikvm.relpath}"  property="ikvm.found"/>
-    </target>
-    <target name="get-ikvm" depends="file-checks" unless="ikvm.found" description="Install IKVM">
-        <mkdir dir="ikvm-uwp"/>
-        <exec executable="git">
-            <arg value="clone"/>
-            <arg value="https://github.com/shannah/cn1-ikvm-uwp.git"/>
-            <arg value="${ikvm.relpath}"/>
-        </exec>
-    </target>
-    
-    
-    
-    <target name="setup" description="Setup a CN1 project to do UWP builds">
-        <fail message="Please specify the project to set up using the codename1.project.dir property.  E.g. add -Dcodename1.project.dir=path/to/project to your command line args.">
-            <condition>
-                <not><isset property="codename1.project.dir"/></not>
-            </condition>
-        </fail>
-        <fail message="The specified Codename One project could not be found.">
-            <condition>
-                <not>
-                    <available file="${codename1.project.dir}"/>
-                </not>
-            </condition>
-        </fail>
-        <property name="cn1.home" value="../cn1"/>
-        <property name="cn1.dir" location="${cn1.home}"/>
-        <fail message="cn1.home property should point to the Codename One home directory.  It could not be found.  Currently pointing to ${cn1.home}">
-            <condition>
-                <not>
-                    <available file="${cn1.dir}"/>
-                </not>
-            </condition>
-        </fail>
-        
-        <copy file="build-win-template.xml" tofile="${codename1.project.dir}/build-win.xml"/>
-        <property name="ikvm.fullpath" location="${ikvm.relpath}"/>
-        <property name="basedir.fullpath" location="."/>
-        <propertyfile file="${codename1.project.dir}/codenameone_settings.properties">
-            <entry key="ikvm.dir" value="${ikvm.fullpath}"/>
-            <entry key="uwp.port.dir" value="${basedir.fullpath}"/>
-            <entry key="cn1.home" value="${cn1.dir}"/>
-            
-        </propertyfile>
-        
+    <target name="-post-jar">
+        <copy file="${dist.jar}" tofile="../anttasks/src/UWPImplementationFactory.jar"/>
     </target>
 </project>

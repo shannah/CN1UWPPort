@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="UWPTemplate" default="default-win" basedir=".">
+    <description>Builds, tests, and runs the project UWPTemplate.</description>
+    <import file="build.xml"/>
+    
+    <target name="init-uwp" depends="init">
+        <echo message="IKVM Dir: ${ikvm.dir}"/>
+        <echo message="UWP Port Dir: ${uwp.port.dir}"/>
+        <taskdef name="generateVS2015Project" 
+                 classname="com.codename1.build.uwp.GenerateVS2015Project"
+                 classpath="${uwp.port.dir}/bin/CN1UWPPort.jar"
+        />
+    </target>
+    <target name="create-uwp-project" depends="init-uwp,jar" description="Create Universal Windows Platform project for this app">
+        
+        <generateVS2015Project 
+            vsProjectTemplate="${cn1.home}/Ports/UWP/VSProjectTemplate"
+            vsProjectOutput="UWPProject"
+            ikvmDir="${ikvm.dir}"
+        />
+    </target>
+
+</project>

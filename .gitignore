@@ -1,2 +1,16 @@
 ikvm-uwp
 /nbproject/private/
+/build/
+/dist/
+/TestProject/build/
+/TestProject/dist/
+/TestProject/UWPProject/
+/TestProject/lib/*.jar
+/TestProject/lib/*.zip
+/TestProject/build-win.xml
+/TestProject/JavaSE.jar
+/TestProject/CodeNameOneBuildClient.jar
+/TestProject/nbproject/private/
+/UWPImplementationFactory/dist/
+/UWPImplementationFactory/build/
+/UWPImplementationFactory/nbproject/private/
