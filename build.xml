@@ -85,8 +85,20 @@
     </target>
     
     
+    <target name="cn1-home">
+        <property name="cn1.home" value="../CodenameOne"/>
+        <property name="cn1.dir" location="${cn1.home}"/>
+        <fail message="cn1.home property should point to the Codename One home directory.  It could not be found.  Currently pointing to ${cn1.home}">
+            <condition>
+                <not>
+                    <available file="${cn1.dir}"/>
+                </not>
+            </condition>
+        </fail>
+        
+    </target>
     
-    <target name="setup" depends="configure,get-ikvm" description="Setup a CN1 project to do UWP builds">
+    <target name="setup" depends="configure,get-ikvm,cn1-home" description="Setup a CN1 project to do UWP builds">
         <fail message="Please specify the project to set up using the codename1.project.dir property.  E.g. add -Dcodename1.project.dir=path/to/project to your command line args.">
             <condition>
                 <not><isset property="codename1.project.dir"/></not>
@@ -96,15 +108,6 @@
             <condition>
                 <not>
                     <available file="${codename1.project.dir}"/>
-                </not>
-            </condition>
-        </fail>
-        <property name="cn1.home" value="../CodenameOne"/>
-        <property name="cn1.dir" location="${cn1.home}"/>
-        <fail message="cn1.home property should point to the Codename One home directory.  It could not be found.  Currently pointing to ${cn1.home}">
-            <condition>
-                <not>
-                    <available file="${cn1.dir}"/>
                 </not>
             </condition>
         </fail>
@@ -136,4 +139,49 @@
           <entry  key="file.reference.JavaSE.jar" value="JavaSE.jar"/>
         </propertyfile>
     </target>
+    
+    <target name="update-project-template-dlls" depends="cn1-home,get-ikvm" description="Updates the VSProjectTemplate with the dlls from IKVM">
+        <property name="vsproject.template.dir" location="${cn1.dir}/Ports/UWP/VSProjectTemplate"/>
+        <property name="vsproject.lib.dir" location="${vsproject.template.dir}/UWPApp/lib"/>
+        <copy file="${ikvm.relpath}/bin/IKVM.OpenJDK.Text.dll" tofile="${vsproject.lib.dir}/IKVM.OpenJDK.Text.dll" overwrite="true"/>
+        <copy file="${ikvm.relpath}/bin/IKVM.OpenJDK.Core.dll" tofile="${vsproject.lib.dir}/IKVM.OpenJDK.Core.dll" overwrite="true"/>
+        <copy file="${ikvm.relpath}/bin/IKVM.OpenJDK.Util.dll" tofile="${vsproject.lib.dir}/IKVM.OpenJDK.Util.dll" overwrite="true"/>
+        <copy file="${ikvm.relpath}/bin/IKVM.Reflection.dll" tofile="${vsproject.lib.dir}/IKVM.Reflection.dll" overwrite="true"/>
+        <copy file="${ikvm.relpath}/bin/IKVM.Runtime.dll" tofile="${vsproject.lib.dir}/IKVM.Runtime.dll" overwrite="true"/>
+    </target>
+    
+    
+    <target name="compile-ikvm" depends="get-ikvm" description="Compile IKVM from source">
+        <!-- This target compiles all of IKVM from source.  This includes compiling
+         OpenJDK, which takes about 20 minutes on my MS Surface 1.
+         Only use this option if you've made changes to the OpenJDK source.  If you've
+         only made changes inside the ikvm/runtime directory, then you should use the
+         compile-ikvm-runtime target.
+        -->
+        <echo>
+            Compiling IKVM from Source...
+            This includes compiling
+            OpenJDK, which takes about 20 minutes on my MS Surface 1.
+            Only use this option if you've made changes to the OpenJDK source.  If you've
+            only made changes inside the ikvm/runtime directory, then you should use the
+            compile-ikvm-runtime target.
+        </echo>
+        <ant dir="${ikvm.relpath}" target="compile-all"/>
+    </target>
+    
+    <target name="compile-ikvm-runtime" depends="get-ikvm" description="Compile IKVM from source">
+        <!-- This target compiles only the IKVM runtime.  Use this if you've made changes to
+        the IKVM runtime only (hopefully this is most of the time).  If you have made changes
+        to the OpenJDK or files outside of the ikvm/runtime directory, then you should use
+        the compile-all target.-->
+        <echo>
+            Compiling the IKVM runtime from source.
+            This target compiles only the IKVM runtime.  Use this if you've made changes to
+            the IKVM runtime only (hopefully this is most of the time).  If you have made changes
+            to the OpenJDK or files outside of the ikvm/runtime directory, then you should use
+            the compile-all target.
+        </echo>
+        <ant dir="${ikvm.relpath}" target="compile-runtime"/>
+    </target>
+    
 </project>
