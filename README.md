@@ -35,7 +35,7 @@ $ ant setup -Dcodenameone.project.dir=TestProject
 
 In the above example, we used one argument:
 
-* codenameone.project.dir` => The path to a Codename One Netbeans project that we wish to add UWP build support to.  In this case we specified `TestProject` as this project is included in the repo as a sample.
+* `codenameone.project.dir` => The path to a Codename One Netbeans project that we wish to add UWP build support to.  In this case we specified `TestProject` as this project is included in the repo as a sample.
 
 Additionally, if your CodenameOne directory is located in a different location than `..\CodenameOne` relative to the CN1UWPPort directory, you can add the `cn1.home` argument. E.g. `ant setup -Dcodenameone.project.dir=TestProject -Dcn1.home=..\cn1` if it were located at `..\cn1`.
 
