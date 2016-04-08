@@ -1,6 +1,10 @@
 #Codename One UWP Port (Offline Build Tool)
 
-This project allows you to build Codename One projects as a Universal Windows Platform app.
+This project allows you to build [Codename One](http://www.codenameone.com) projects as a Universal Windows Platform app.
+
+## Status
+
+This project is at a very early stage.  It was put together to facilitate the further development of Codename One UWP apps in the community so that we can more easily collaborate.  It is likely that this project will undergo major changes over the next few months.  Ultimately, portions of this project will be incorporated into the Codename One build server, which will be the recommended way to build UWP applications in Codename One.
 
 ## Requirements
 
@@ -89,4 +93,17 @@ e.g.
 
 This will copy a few of the IKVM dll files into your `$cn1.home/Ports/UWP/VSProjectTemplate/lib` directory so that they will be included in subsequent projects (resulting from `create-uwp-project`).
 
+##License
+
+This project makes use of several other projects including, IKVM, OpenJDK, and Codename One.  See the licenses for this projects to find their respective licenses.  The code and scripts that are written specifically for this project are released under the Apache License version 2.
+
+#Credits
+
+The Codename One UWP port builds on the fine work of several individuals.  Notably:
+
+1. [Eugene Herashchenko](https://twitter.com/Geraschenco) - Eugene successfully modified IKVM to run on WinRT/UWP.  This was not an easy task, and I don't know of anyone else who has succeeded in this.
+2. [Joeren Frijters](https://twitter.com/jeroenfrijters) - The developer of IKVM.
+3. [Fabrício Cabeça](https://github.com/pmovil) - Took the old broken Winphone 8 port and made it "not broken".  This UWP port is based largely on Fabricio's [CN1 Windows Port](https://github.com/Pmovil/CN1WindowsPort), which includes countless improvements over the previous Codename one port, including a whole new graphics pipeline based on the Win2D library.
+4. [Codename One](http://www.codenameone.com) - This project was developed by Steve Hannah of Codename One, and would not be possible without the solid foundation that was established over many years of development by the Codename One team and its founders, Shai Almog and Chen Fishbein.
  
+
