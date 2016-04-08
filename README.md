@@ -79,20 +79,6 @@ Building IKVM from source requires that you have Nant installed in your path.  Y
 
 One **VERY** annoying thing about windows is that it only supports paths of 260 characters or less.  If you check out your CN1UWPPort to deep in your files system, then you may run into Pathname too long errors.  The solution for this is to check out the CN1UWPPort directory into a shallow directory.  E.g. perhaps only one or two nested directories below your user home directory.
 
-###Updating the Visual Studio Project Template
-
-If you are building from source, then you'll need to copy some of the DLL files from the IKVM directory into your visual studio project template.  Use the `update-project-template-dlls` target for this:
-
-e.g.
-
-~~~~
-> ant update-project-template-dlls
-~~~~
-
-**NOTE:** This requires that the `cn1.home` property is set - or that CN1UWPPort has been checked out in the same directory as CodenameOne.
-
-This will copy a few of the IKVM dll files into your `$cn1.home/Ports/UWP/VSProjectTemplate/lib` directory so that they will be included in subsequent projects (resulting from `create-uwp-project`).
-
 ##License
 
 This project makes use of several other projects including, IKVM, OpenJDK, and Codename One.  See the licenses for this projects to find their respective licenses.  The code and scripts that are written specifically for this project are released under the Apache License version 2.
