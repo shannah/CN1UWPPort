@@ -168,6 +168,32 @@ public class GenerateVS2015Project extends Task {
             log("Application dll file has not changed.");
         }
         
+        File[] ikvmDlls = new File[]{
+            new File(ikvmDir, "bin/IKVM.Runtime.dll"),
+            new File(ikvmDir, "bin/IKVM.Reflection.dll"),
+            new File(ikvmDir, "bin/IKVM.OpenJDK.Core.dll"),
+            new File(ikvmDir, "bin/IKVM.OpenJDK.Text.dll"),
+            new File(ikvmDir, "bin/IKVM.OpenJDK.Util.dll")
+        };
+        
+        File[] ikvmDllDests = new File[]{
+            new File(destDllFile.getParentFile(), "IKVM.Runtime.dll"),
+            new File(destDllFile.getParentFile(), "IKVM.Reflection.dll"),
+            new File(destDllFile.getParentFile(), "IKVM.OpenJDK.Core.dll"),
+            new File(destDllFile.getParentFile(), "IKVM.OpenJDK.Text.dll"),
+            new File(destDllFile.getParentFile(), "IKVM.OpenJDK.Util.dll")
+        };
+        
+        for (int i=0; i<ikvmDlls.length; i++) {
+            try {
+                log("Copying "+ikvmDlls[i]+" to "+ikvmDllDests[i]);
+                copy(ikvmDlls[i], ikvmDllDests[i]);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                throw new BuildException("Failed to copy IKVM dll file : "+ikvmDlls[i]+ " into project directory");
+            }
+        }
+        
         // Extract resources out of the jar files
         log("Extracting resources from jars...");
         File resourceDir = new File(vsProjectOutput, "UWPApp" + File.separator + "res");
