@@ -99,7 +99,7 @@
                 </not>
             </condition>
         </fail>
-        <property name="cn1.home" value="../cn1"/>
+        <property name="cn1.home" value="../CodenameOne"/>
         <property name="cn1.dir" location="${cn1.home}"/>
         <fail message="cn1.home property should point to the Codename One home directory.  It could not be found.  Currently pointing to ${cn1.home}">
             <condition>
