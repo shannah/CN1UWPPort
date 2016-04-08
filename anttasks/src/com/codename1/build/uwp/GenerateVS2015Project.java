@@ -71,9 +71,13 @@ public class GenerateVS2015Project extends Task {
     }
     
     private void generateProject(boolean onlyUpdate) {
-        requireProperties("codename1.arg.uwp.appid",
+        requireProperties(
                 "codename1.packageName",
                 "codename1.mainName");
+        if (p("codename1.arg.uwp.appid", null) == null) {
+            getProject().setProperty("codename1.arg.uwp.appid", "XXXXX."+p("codename1.packageName", null));
+            log("uwp.appid build hint is not set.  Using "+p("codename1.arg.uwp.appid", null));
+        }
         
         if (ikvmDir == null) {
             String ikvmPath = getProject().getProperty("ikvm.dir");
