@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -67,6 +71,9 @@ public class GenerateVS2015Project extends Task {
     }
     
     private void generateProject(boolean onlyUpdate) {
+        requireProperties("codename1.arg.uwp.appid",
+                "codename1.packageName",
+                "codename1.mainName");
         
         if (ikvmDir == null) {
             String ikvmPath = getProject().getProperty("ikvm.dir");
@@ -196,12 +203,14 @@ public class GenerateVS2015Project extends Task {
         
         // Extract resources out of the jar files
         log("Extracting resources from jars...");
-        File resourceDir = new File(vsProjectOutput, "UWPApp" + File.separator + "res");
+        File uwpAppDir = new File(vsProjectOutput, "UWPApp");
+        File resourceDir = new File(uwpAppDir, "res");
         extractResources(resourceDir, distJarFile, codenameOneJarFile);
         
         
         List<File> resourceFiles = listFilesRecursive(resourceDir, new ArrayList<File>());
         List<String> resourcePaths = getRelativePaths(resourceDir.getParentFile(), resourceFiles, new ArrayList<String>());
+        log("Found resources: "+resourcePaths);
         StringBuilder sb = new StringBuilder();
         /*
         <ItemGroup>
@@ -227,8 +236,8 @@ public class GenerateVS2015Project extends Task {
         sb.append("<!-- CN1 RESOURCES --><ItemGroup>\n");
                 
         for (String resPath : resourcePaths) {
-            sb.append("   <Content Include=\"").append(resPath.replaceAll("/", "\\")).append("\">\n")
-                    .append("       <CopyToOutputDirectory>Always</CopyToOutputDirectory>\n")
+            sb.append("   <Content Include=\"").append(resPath.replaceAll("/", "\\")).append("\">\r\n")
+                    .append("       <CopyToOutputDirectory>Always</CopyToOutputDirectory>\r\n")
                     .append("    </Content>");
         }
         sb.append("</ItemGroup><!-- END CN1 RESOURCES -->\n");
@@ -236,7 +245,7 @@ public class GenerateVS2015Project extends Task {
         log("Adding resources to visual studio project");
         try {
             replaceAllInFile(csProjFile, "(?s)<!-- CN1 RESOURCES -->.*<!-- END CN1 RESOURCES -->", "");
-            replaceInFile(csProjFile, "</Project>", sb.toString()+"\n</Project>");
+            replaceInFileLiteral(csProjFile, "</Project>", sb.toString()+"\n</Project>");
         } catch (IOException ex) {
             throw new BuildException("Failed to add resource to csproj file", ex);
         }
@@ -246,13 +255,132 @@ public class GenerateVS2015Project extends Task {
         File mainCsFile = new File(vsProjectOutput, "UWPApp"+ File.separator+"Main.cs");
         String mainClassName = getProject().getProperty("codename1.mainName");
         String packageName = getProject().getProperty("codename1.packageName");
+        String[] mainCsReplacements = new String[] {
+            "com\\.codename1\\.tests\\.hellowin\\.HelloWindows", 
+            packageName + "."+mainClassName,      
+        };
         try {
-            replaceAllInFile(mainCsFile, "com\\.codename1\\.tests\\.hellowin\\.HelloWindows", packageName + "."+mainClassName);
+            replaceAllInFile(mainCsFile, mainCsReplacements);
         } catch (IOException ex) {
             throw new BuildException("Failed to update main class name in Main.cs file.", ex);
         }
         
+        File mainPageXamlCsFile = new File(uwpAppDir, "MainPage.xaml.cs");
+        try {
+            replaceInFile(mainPageXamlCsFile, 
+                "public static String BUILD_KEY = \".*\";",
+                "public static String BUILD_KEY = \""+p("codename1.build.key", null)+"\";",
+                
+                "public static String PACKAGE_NAME = \".*\";",
+                "public static String PACKAGE_NAME = \""+p("codename1.packageName", null)+"\";",
+                
+                "public static String BUILT_BY_USER = \".*\";",
+                "public static String BUILT_BY_USER = \""+p("codename1.username", null)+"\";",
+                
+                "public static String APP_NAME = \".*\";",
+                "public static String APP_NAME = \""+p("codename1.displayName", null)+"\";",
+                
+                "public static String APP_VERSION = \".*\";",
+                "public static String APP_VERSION = \""+p("codename1.version", "1.0")+"\";"
+            );
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new BuildException("Failed to replace strings in "+mainPageXamlCsFile, ex);
+        }
+        
+        File pfxFile = new File(uwpAppDir, "UWPApp_StoreKey.pfx");
+        String certPath = getProject().getProperty("codename1.arg.uwp.certificate");
+        File certFile = null;
+        if (certPath != null && !certPath.isEmpty()) {
+            certFile = new File(certPath);
+            if (!certFile.exists()) {
+                log("Specified certificate "+certPath+" not found.");
+                certFile = null;
+            }
+        } else {
+            log("No certificate was specified.  Please set the win.certificate build hint to the path of your certificate file.");
+        }
+        
+        if (certFile == null) {
+            log("No certificate file was provided.  Using the default certificate.");
+        } else {
+            try {
+                copy(certFile, pfxFile); 
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                throw new BuildException("Failed to copy certificate file.", ex);
+            }
+        }
+        
+        
+        String certCN = findCertCN(pfxFile);
+        if (certCN == null) {
+            throw new BuildException("Invalid key file supplied.  Failed to find the Cert CN");
+            
+            
+        }
+        
+        
+        
+        log("Updating appxmanifest");
+        File appxManifest = new File(uwpAppDir, "Package.appxmanifest");
+        String[] appxManifestReplacements = new String[] {
+            "<DisplayName>.*</DisplayName>", 
+            "<DisplayName>"+p("codename1.packageName", null)+"</DisplayName>",
+            
+            "<PublisherDisplayName>.*</PublisherDisplayName>", 
+            "<PublisherDisplayName>"+p("codename1.vendor", "Codename One")+"</PublisherDisplayName>",
+            
+            "<uap:VisualElements DisplayName=\"[^\"]*\"", 
+            "<uap:VisualElements DisplayName=\""+p("codename1.packageName", null)+"\"",
+            
+            "<Identity Name=\"[^\"]*\"", 
+            "<Identity Name=\""+p("codename1.arg.uwp.appid", null)+"\"",
+            
+            "Publisher=\"CN=[^\"]*\"", 
+            "Publisher=\"CN="+certCN+"\"",
+            
+            "(<Identity [^>]*Version=\")([^\"]+)",
+            "$1"+p("codename1.version", "1.0")+"."+p("codename1.arg.uwp.build.version", "0.0")
+        };
+        try {
+            replaceInFile(appxManifest, appxManifestReplacements);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            throw new BuildException("Failed to update appxmanifest file.", ex);
+        }
+        
+        log("Updating Package.StoreAssociation.xml");
+        File storeAssocXml = new File(uwpAppDir, "Package.StoreAssociation.xml");
+        String[] storeAssocReplacements = new String[] {
+            "<Publisher>[^<]+?</Publisher>", 
+            "<Publisher>CN="+certCN+"</Publisher>",
+            
+            "<PublisherDisplayName>.*?</PublisherDisplayName>", 
+            "<PublisherDisplayName>"+p("codename1.vendor", "Codename One")+"</PublisherDisplayName>",
+            
+            "<MainPackageIdentityName>.*?</MainPackageIdentityName>",
+            "<MainPackageIdentityName>"+p("codename1.arg.uwp.appid", null)+"</MainPackageIdentityName>",
+            
+            "<ReservedName>.*?</ReservedName>",
+            "<ReservedName>"+p("codename1.packageName", null)+"</ReservedName>"
+        };
+        
+        try {
+            replaceInFile(storeAssocXml, storeAssocReplacements);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            throw new BuildException("Failed to update Package.StoreAssociation.xml file.", ex);
+        }
+        
+        
         super.execute(); 
+    }
+    
+    
+    private String p(String propertyName, String defaultValue) {
+        String out = getProject().getProperty(propertyName);
+        return out == null ? defaultValue : out;
     }
     
     private List<File> listFilesRecursive(File root, List<File> out) {
@@ -282,6 +410,7 @@ public class GenerateVS2015Project extends Task {
                 out.add(path);
             }
         }
+
         return out;
     }
     
@@ -292,26 +421,46 @@ public class GenerateVS2015Project extends Task {
         cp.execute();
     }
     
-    public void replaceInFile(File sourceFile, String marker, String newValue) throws IOException {
+    public void replaceInFile(File sourceFile, String... replacements) throws IOException {
+        
         DataInputStream dis = new DataInputStream(new FileInputStream(sourceFile));
         byte[] data = new byte[(int) sourceFile.length()];
         dis.readFully(data);
         dis.close();
         FileWriter fios = new FileWriter(sourceFile);
         String str = new String(data);
-        str = str.replace(marker, newValue);
+        for (int i=0; i<replacements.length; i+=2) {
+            str = str.replaceFirst(replacements[i], replacements[i+1]);
+        }
+        fios.write(str);
+        fios.close();
+    }
+    
+    public void replaceInFileLiteral(File sourceFile, String... replacements) throws IOException {
+        
+        DataInputStream dis = new DataInputStream(new FileInputStream(sourceFile));
+        byte[] data = new byte[(int) sourceFile.length()];
+        dis.readFully(data);
+        dis.close();
+        FileWriter fios = new FileWriter(sourceFile);
+        String str = new String(data);
+        for (int i=0; i<replacements.length; i+=2) {
+            str = str.replace(replacements[i], replacements[i+1]);
+        }
         fios.write(str);
         fios.close();
     }
 
-    public void replaceAllInFile(File sourceFile, String marker, String newValue) throws IOException {
+    public void replaceAllInFile(File sourceFile, String... replacements) throws IOException {
         DataInputStream dis = new DataInputStream(new FileInputStream(sourceFile));
         byte[] data = new byte[(int) sourceFile.length()];
         dis.readFully(data);
         dis.close();
         FileWriter fios = new FileWriter(sourceFile);
         String str = new String(data);
-        str = str.replaceAll(marker, newValue);
+        for (int i=0; i<replacements.length; i+=2) {
+            str = str.replaceAll(replacements[i], replacements[i+1]);
+        }
         fios.write(str);
         fios.close();
     }
@@ -415,6 +564,15 @@ public class GenerateVS2015Project extends Task {
         
     }
 
+    
+    private void requireProperties(String... pnames) {
+        for (String p : pnames) {
+            if (p(p, null) == null) {
+                throw new BuildException("Property "+p+" is required.");
+            }
+        }
+    }
+    
     /**
      * @return the vsProjectTemplate
      */
@@ -521,5 +679,28 @@ public class GenerateVS2015Project extends Task {
         }
         tmp.deleteOnExit();
         return tmp;
+    }
+    
+    private String findCertCN(File pfxFile) {
+        //File pfxFile = new File(uwpAppDir, "UWPApp_StoreKey.pfx");
+        ExecTask certUtilExec = (ExecTask)getProject().createTask("exec");
+        certUtilExec.setExecutable("certutil");
+        certUtilExec.createArg().setValue("-dump");
+        certUtilExec.createArg().setValue(pfxFile.getAbsolutePath());
+        certUtilExec.setOutputproperty("cert.contents");
+        certUtilExec.execute();
+        String certContents = getProject().getProperty("cert.contents");
+        if (certContents == null) {
+            log("No contents found in cert "+pfxFile);
+            return null;
+        } else {
+            log("Cert Contents: "+certContents);
+        }
+        Pattern p =Pattern.compile("(?m)^Subject: CN=(.*)$");
+        Matcher m = p.matcher(certContents);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
     }
 }
