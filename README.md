@@ -1,6 +1,14 @@
-#Codename One UWP Port
+#Codename One UWP Port (Offline Build Tool)
 
 This project allows you to build Codename One projects as a Universal Windows Platform app.
+
+## Requirements
+
+In order to build UWP Apps, you will require the following:
+
+1. JDK8
+2. ANT 1.8 or higher
+3. Microsoft Visual Studio 2015
 
 ## Installation Instructions
 
