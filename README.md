@@ -90,6 +90,6 @@ The Codename One UWP port builds on the fine work of several individuals.  Notab
 1. [Eugene Herashchenko](https://twitter.com/Geraschenco) - Eugene successfully modified IKVM to run on WinRT/UWP.  This was not an easy task, and I don't know of anyone else who has succeeded in this.
 2. [Joeren Frijters](https://twitter.com/jeroenfrijters) - The developer of IKVM.
 3. [Fabrício Cabeça](https://github.com/pmovil) - Took the old broken Winphone 8 port and made it "not broken".  This UWP port is based largely on Fabricio's [CN1 Windows Port](https://github.com/Pmovil/CN1WindowsPort), which includes countless improvements over the previous Codename one port, including a whole new graphics pipeline based on the Win2D library.
-4. [Codename One](http://www.codenameone.com) - This project was developed by Steve Hannah of Codename One, and would not be possible without the solid foundation that was established over many years of development by the Codename One team and its founders, Shai Almog and Chen Fishbein.
+4. [Codename One](http://www.codenameone.com) - This project was developed by Steve Hannah of Codename One, and would not be possible without the solid foundation that was established over many years of development by the Codename One team *especially* its founders, Shai Almog and Chen Fishbein.
  
 
