@@ -6,6 +6,9 @@
     <target name="init-uwp" depends="init">
         <echo message="IKVM Dir: ${ikvm.dir}"/>
         <echo message="UWP Port Dir: ${uwp.port.dir}"/>
+        <property name="msbuild.path" location="C:\Program Files (x86)\MSBuild\14.0\Bin\\MSBuild.exe"/>
+        <property name="build.configuration" value="Debug"/>
+        <property name="appxbundle.platforms" value="x64"/>
         <taskdef name="generateVS2015Project" 
                  classname="com.codename1.build.uwp.GenerateVS2015Project"
                  classpath="${uwp.port.dir}/bin/CN1UWPPort.jar"
@@ -14,10 +17,22 @@
     <target name="create-uwp-project" depends="init-uwp,jar" description="Create Universal Windows Platform project for this app">
         
         <generateVS2015Project 
-            vsProjectTemplate="${cn1.home}/Ports/UWP/VSProjectTemplate"
-            vsProjectOutput="UWPProject"
-            ikvmDir="${ikvm.dir}"
+            vsprojecttemplate="${cn1.home}/Ports/UWP/VSProjectTemplate"
+            vsprojectoutput="UWPProject"
+            ikvmdir="${ikvm.dir}"
         />
+    </target>
+    
+    <target name="build-app" depends="create-uwp-project" description="Generate Visual Studio Project">
+        <property name="solution.path" location="UWPProject/UWPApp.sln"/>
+        <property name="csproj.path" location="UWPProject/UWPApp/UWPApp.csproj"/>
+        <echo message="Building project ${csproj.path}"/>
+        <exec executable="${msbuild.path}" failonerror="true">
+            <arg value="${csproj.path}"/>
+            <!--<arg value="/p:Configuration=Release"/>
+            <arg value="/p:Platform=x64"/>-->
+            <arg value="/p:Configuration=${build.configuration};Platform=${appxbundle.platforms};AppxBundle=Always;AppxBundlePlatforms=${appxbundle.platforms}"/>
+        </exec>
     </target>
 
 </project>

@@ -5,6 +5,9 @@
  */
 package com.codename1.build.uwp;
 
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,12 +30,15 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageOutputStream;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.taskdefs.Copy;
 import org.apache.tools.ant.taskdefs.ExecTask;
 import org.apache.tools.ant.taskdefs.Unpack;
 import org.apache.tools.ant.taskdefs.Zip;
+import org.apache.tools.ant.taskdefs.optional.PropertyFile;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.ZipFileSet;
@@ -77,6 +83,9 @@ public class GenerateVS2015Project extends Task {
         if (p("codename1.arg.uwp.appid", null) == null) {
             getProject().setProperty("codename1.arg.uwp.appid", "XXXXX."+p("codename1.packageName", null));
             log("uwp.appid build hint is not set.  Using "+p("codename1.arg.uwp.appid", null));
+        }
+        if (p("codename1.arg.uwp.displayName", null) != null) {
+            getProject().setProperty("codename1.displayName", p("codename1.arg.uwp.displayName", null));
         }
         
         if (ikvmDir == null) {
@@ -328,15 +337,20 @@ public class GenerateVS2015Project extends Task {
         
         log("Updating appxmanifest");
         File appxManifest = new File(uwpAppDir, "Package.appxmanifest");
+        
+        String buildVersion = p("codename1.arg.uwp.build.version", "0.0");
+        String[] buildVersionParts = buildVersion.split("\\.");
+        buildVersion = buildVersionParts[0] + "." + (Integer.parseInt(buildVersionParts[1])+1);
+        updateBuildVersion(buildVersion);
         String[] appxManifestReplacements = new String[] {
             "<DisplayName>.*</DisplayName>", 
-            "<DisplayName>"+p("codename1.packageName", null)+"</DisplayName>",
+            "<DisplayName>"+p("codename1.displayName", null)+"</DisplayName>",
             
             "<PublisherDisplayName>.*</PublisherDisplayName>", 
             "<PublisherDisplayName>"+p("codename1.vendor", "Codename One")+"</PublisherDisplayName>",
             
             "<uap:VisualElements DisplayName=\"[^\"]*\"", 
-            "<uap:VisualElements DisplayName=\""+p("codename1.packageName", null)+"\"",
+            "<uap:VisualElements DisplayName=\""+p("codename1.displayName", null)+"\"",
             
             "<Identity Name=\"[^\"]*\"", 
             "<Identity Name=\""+p("codename1.arg.uwp.appid", null)+"\"",
@@ -345,8 +359,9 @@ public class GenerateVS2015Project extends Task {
             "Publisher=\"CN="+certCN+"\"",
             
             "(<Identity [^>]*Version=\")([^\"]+)",
-            "$1"+p("codename1.version", "1.0")+"."+p("codename1.arg.uwp.build.version", "0.0")
+            "$1"+p("codename1.version", "1.0")+"."+buildVersion
         };
+        
         try {
             replaceInFile(appxManifest, appxManifestReplacements);
         } catch (IOException ex) {
@@ -367,7 +382,7 @@ public class GenerateVS2015Project extends Task {
             "<MainPackageIdentityName>"+p("codename1.arg.uwp.appid", null)+"</MainPackageIdentityName>",
             
             "<ReservedName>.*?</ReservedName>",
-            "<ReservedName>"+p("codename1.packageName", null)+"</ReservedName>"
+            "<ReservedName>"+p("codename1.displayName", null)+"</ReservedName>"
         };
         
         try {
@@ -377,6 +392,47 @@ public class GenerateVS2015Project extends Task {
             throw new BuildException("Failed to update Package.StoreAssociation.xml file.", ex);
         }
         
+        log("Copying icon");
+        try {
+            File resourcesDir = new File(getProject().getBaseDir(), "resources" + File.separator + "uwp");
+            File srcAssetsDir = new File(resourcesDir, "Assets");
+            File iconFile = new File(getProject().getBaseDir(), "icon.png");
+            File storeLogoFile = new File(srcAssetsDir, "StoreLogo.png");
+            File storeLogo44x44_24File = new File(srcAssetsDir, "Square44x44Logo.targetsize-24_altform-unplated.png");
+            File storeLogo44x44_scale200File = new File(srcAssetsDir, "Square44x44Logo.scale-200.png");
+            File storeLogo150x150_scale200File = new File(srcAssetsDir, "Square150x150Logo.png");
+            File lockScreenLogo_scale200File = new File(srcAssetsDir, "LockScreenLogo.scale-200.png");
+            File wide310x150LogoFile = new File(srcAssetsDir, "Wide310x150Logo.scale-200.png");
+            File splashScreenFile = new File(srcAssetsDir, "SplashScreen.scale-200.png");
+            
+            BufferedImage storeLogo = ImageIO.read(storeLogoFile.exists() ? storeLogoFile : iconFile);
+            BufferedImage storeLogo44x44_24 = storeLogo44x44_24File.exists() ? ImageIO.read(storeLogo44x44_24File) : storeLogo;
+            BufferedImage storeLogo44x44_scale200 = storeLogo44x44_scale200File.exists() ? ImageIO.read(storeLogo44x44_scale200File) : storeLogo;
+            BufferedImage storeLogo150x150_scale200 = storeLogo150x150_scale200File.exists() ? ImageIO.read(storeLogo150x150_scale200File) : storeLogo;
+            BufferedImage lockScreenLogo_scale200 = lockScreenLogo_scale200File.exists() ? ImageIO.read(lockScreenLogo_scale200File) : storeLogo;
+            
+            File assetsDir = new File(uwpAppDir, "Assets");
+            
+            createIcon(storeLogo, 50, 50, new File(assetsDir, "StoreLogo.png"));
+            createIcon(storeLogo44x44_24, 24, 24, new File(assetsDir, "Square44x44Logo.targetsize-24_altform-unplated.png"));
+            createIcon(storeLogo44x44_scale200, 88, 88, new File(assetsDir, "Square44x44Logo.scale-200.png"));
+            createIcon(storeLogo150x150_scale200, 300, 300, new File(assetsDir, "Square150x150Logo.scale-200.png"));
+            createIcon(lockScreenLogo_scale200, 48, 48, new File(assetsDir, "LockScreenLogo.scale-200.png"));
+            
+            BufferedImage wideLogo = wide310x150LogoFile.exists() ? ImageIO.read(wide310x150LogoFile) : storeLogo;
+            wideLogo = fitImage(wideLogo, 620, 300, 25);
+            createIcon(wideLogo, 620, 300, new File(assetsDir, "Wide310x150Logo.scale-200.png"));
+            
+            BufferedImage splashScreen = splashScreenFile.exists() ? ImageIO.read(splashScreenFile) : storeLogo;
+            splashScreen = fitImage(splashScreen, 1240, 600, 50);
+            createIcon(splashScreen, 1240, 600, new File(assetsDir, "SplashScreen.scale-200.png" ));
+            
+            
+        } catch (IOException ex) {
+            Logger.getLogger(GenerateVS2015Project.class.getName()).log(Level.SEVERE, null, ex);
+            throw new BuildException("Failed to read project icon", ex);
+        }
+        //copy(new File(getProject().getBaseDir(), "icon.png"), new File(uwpAppDir, "Assets" + File.separator + "StoreLogo.png"));
         
         super.execute(); 
     }
@@ -419,9 +475,14 @@ public class GenerateVS2015Project extends Task {
     }
     
     private void copy(File src, File dest) {
+        copy(src, dest, false);
+    }
+    
+    private void copy(File src, File dest, boolean overwrite) {
         Copy cp = (Copy)getProject().createTask("copy");
         cp.setFile(src);
         cp.setTofile(dest);
+        cp.setOverwrite(overwrite);
         cp.execute();
     }
     
@@ -707,4 +768,57 @@ public class GenerateVS2015Project extends Task {
         }
         return null;
     }
+    
+    private void updateBuildVersion(String version) {
+        PropertyFile pf = (PropertyFile)getProject().createTask("propertyfile");
+        PropertyFile.Entry e = pf.createEntry();
+        e.setKey("codename1.arg.uwp.build.version");
+        e.setValue(version);
+        pf.setFile(new File(getProject().getBaseDir(), "codenameone_settings.properties"));
+        pf.execute();
+    }
+    
+    private void createIcon(BufferedImage icon, int w, int h, File destFile) throws IOException {
+        //BufferedImage icon = ImageIO.read(new File(getProject().getBaseDir(), "icon.png"));
+        Image icon50 = icon.getScaledInstance(w, h, Image.SCALE_SMOOTH);
+        BufferedImage bicon50 = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Graphics imgG = bicon50.getGraphics();
+        imgG.drawImage(icon50, 0, 0, null);
+        imgG.dispose();
+        ImageIO.write(bicon50, "png", destFile);
+    }
+    
+    private BufferedImage fitImage(BufferedImage img, int targetWidth, int targetHeight, int padding) throws IOException {
+        int innerWidth = targetWidth - 2 * padding;
+        int innerHeight = targetHeight - 2 * padding;
+        
+        if (img.getWidth() > innerWidth-padding || img.getHeight() > innerHeight) {
+            int w = img.getWidth();
+            int h = img.getHeight();
+            if (w > innerWidth) {
+                w = 620;
+                h = (int)(img.getHeight() * innerWidth / (double)img.getWidth());
+            }
+            if (h > innerWidth) {
+                w = (int)(w * innerHeight / (double)h);
+                h = innerHeight;
+            }
+            Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
+            BufferedImage tmpImg = new BufferedImage(innerWidth, innerHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics g = tmpImg.getGraphics();
+            g.drawImage(scaled, (targetWidth - w)/2, (targetHeight-h)/2, null);
+            g.dispose();
+            img = tmpImg;
+
+        } else {
+            BufferedImage tmpImg = new BufferedImage(620, 300, BufferedImage.TYPE_INT_ARGB);
+            Graphics g= tmpImg.getGraphics();
+            g.drawImage(img, (targetWidth-img.getWidth())/2, (targetWidth-img.getHeight())/2, null);
+            g.dispose();
+            img = tmpImg;
+        }
+        return img;
+    }
+    
+    
 }
