@@ -7,14 +7,17 @@
         <echo message="IKVM Dir: ${ikvm.dir}"/>
         <echo message="UWP Port Dir: ${uwp.port.dir}"/>
         <property name="msbuild.path" location="C:\Program Files (x86)\MSBuild\14.0\Bin\\MSBuild.exe"/>
-        <property name="build.configuration" value="Debug"/>
+        <property name="build.configuration" value="Release"/>
         <property name="appxbundle.platforms" value="x64"/>
         <taskdef name="generateVS2015Project" 
                  classname="com.codename1.build.uwp.GenerateVS2015Project"
                  classpath="${uwp.port.dir}/bin/CN1UWPPort.jar"
         />
+        <condition property="msbuild.usenativetoolchain" value="UseDotNetNativeToolchain=false;BuildAppxUploadPackageForUap=true;" else="">
+            <equals arg1="${build.configuration}" arg2="Release"/>
+        </condition>
     </target>
-    <target name="create-uwp-project" depends="init-uwp,jar" description="Create Universal Windows Platform project for this app">
+    <target name="create-uwp-project-nojar" depends="init-uwp">
         
         <generateVS2015Project 
             vsprojecttemplate="${cn1.home}/Ports/UWP/VSProjectTemplate"
@@ -23,7 +26,10 @@
         />
     </target>
     
-    <target name="build-app" depends="create-uwp-project" description="Generate Visual Studio Project">
+    <target name="create-uwp-project" depends="jar,create-uwp-project-nojar" description="Create Universal Windows Platform project for this app">
+    </target>
+    
+    <target name="build-uwp-app-nojar" depends="create-uwp-project-nojar">
         <property name="solution.path" location="UWPProject/UWPApp.sln"/>
         <property name="csproj.path" location="UWPProject/UWPApp/UWPApp.csproj"/>
         <echo message="Building project ${csproj.path}"/>
@@ -31,8 +37,12 @@
             <arg value="${csproj.path}"/>
             <!--<arg value="/p:Configuration=Release"/>
             <arg value="/p:Platform=x64"/>-->
-            <arg value="/p:Configuration=${build.configuration};Platform=${appxbundle.platforms};AppxBundle=Always;AppxBundlePlatforms=${appxbundle.platforms}"/>
+            <arg value="/p:Configuration=${build.configuration};${msbuild.usenativetoolchain}Platform=${appxbundle.platforms};AppxBundle=Always;AppxBundlePlatforms=${appxbundle.platforms}"/>
         </exec>
+    </target>
+
+    <target name="build-uwp-app" depends="jar,build-uwp-app-nojar" description="Build a UWP app">
+        
     </target>
 
 </project>

@@ -184,4 +184,21 @@
         <ant dir="${ikvm.relpath}" target="compile-runtime"/>
     </target>
     
+    
+    <target name="create-uwp-wrapper" depends="get-ikvm" description="Generates the UWPWrapper.zip file">
+        <zip file="dist/uwpwrapper.zip">
+            <fileset dir="." includes="bin/**,TestProject/**" excludes="TestProject/src/**,TestProject/dist/**,TestProject/build/**,TestProject/lib/**,TestProject/JavaSE.jar,TestProject/CodenameOneBuildClient.jar,TestProject/UWPProject/UWPApp/AppPackages/**,TestProject/UWPProject/UWPApp/bin/**,TestProject/UWPProject/UWPApp/lib/**,TestProject/UWPProject/UWPApp/obj/**,TestProject/UWPProject/UWPApp/Assets/**"/>
+        </zip>
+        <ant dir="ikvm-uwp/ikvm-winrt-v3" target="create-release-zip" inheritall="false"/>
+        <copy file="ikvm-uwp/ikvm-winrt-v3/dist/ikvm.zip" tofile="dist/ikvm.zip"/>
+        
+        <property name="build.daemon.dir" location="C:\Users\steve\OneDrive\Documents\cn1_files\incubator\codenameone-svn\BuildDaemon"/>
+        <copy file="dist/uwpwrapper.zip" tofile="${build.daemon.dir}/uwpwrapper.zip"/>
+        <copy file="dist/ikvm.zip" tofile="${build.daemon.dir}/ikvm.zip"/>
+        <copy file="dist/uwpwrapper.zip" tofile="${build.daemon.dir}/src/uwpwrapper.zip"/>
+        <copy file="dist/ikvm.zip" tofile="${build.daemon.dir}/src/ikvm.zip"/>
+        <copy file="dist/uwpwrapper.zip" tofile="${build.daemon.dir}/build/classes/uwpwrapper.zip"/>
+        <copy file="dist/ikvm.zip" tofile="${build.daemon.dir}/build/classes/ikvm.zip"/>
+        
+    </target>
 </project>
