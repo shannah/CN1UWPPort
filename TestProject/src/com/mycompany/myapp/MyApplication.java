@@ -7,6 +7,8 @@ import com.codename1.ui.FontImage;
 import com.codename1.ui.Form;
 import com.codename1.ui.Label;
 import com.codename1.ui.animations.CommonTransitions;
+import com.codename1.ui.events.ActionEvent;
+import com.codename1.ui.events.ActionListener;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.layouts.FlowLayout;
@@ -50,11 +52,11 @@ public class MyApplication {
                     )
         );
         
-        getStarted.addActionListener((e) -> {
+        getStarted.addActionListener(new ActionListener(){public void actionPerformed(ActionEvent e) {
             Display.getInstance().execute("https://www.codenameone.com/developers.html");
-        });
+        }});
         
-        new UITimer(() -> {
+        new UITimer(new Runnable() {public void run()  {
             if(apple.getParent() != null) {
                 apple.getParent().replace(apple, android, CommonTransitions.createFade(500));
             } else {
@@ -64,7 +66,7 @@ public class MyApplication {
                     windows.getParent().replace(windows, apple, CommonTransitions.createFade(500));
                 }                
             }
-        }).schedule(2200, true, hi);
+        }}).schedule(2200, true, hi);
         hi.show();
     }
 
