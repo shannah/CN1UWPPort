@@ -146,7 +146,7 @@
         <copy file="${ikvm.relpath}/bin/IKVM.OpenJDK.Text.dll" tofile="${vsproject.lib.dir}/IKVM.OpenJDK.Text.dll" overwrite="true"/>
         <copy file="${ikvm.relpath}/bin/IKVM.OpenJDK.Core.dll" tofile="${vsproject.lib.dir}/IKVM.OpenJDK.Core.dll" overwrite="true"/>
         <copy file="${ikvm.relpath}/bin/IKVM.OpenJDK.Util.dll" tofile="${vsproject.lib.dir}/IKVM.OpenJDK.Util.dll" overwrite="true"/>
-        <copy file="${ikvm.relpath}/bin/IKVM.Reflection.dll" tofile="${vsproject.lib.dir}/IKVM.Reflection.dll" overwrite="true"/>
+        <copy file="${ikvm.relpath}/bin/IKVM.OpenJDK.Security.dll" tofile="${vsproject.lib.dir}/IKVM.OpenJDK.Security.dll" overwrite="true"/>
         <copy file="${ikvm.relpath}/bin/IKVM.Runtime.dll" tofile="${vsproject.lib.dir}/IKVM.Runtime.dll" overwrite="true"/>
     </target>
     
@@ -189,8 +189,8 @@
         <zip file="dist/uwpwrapper.zip">
             <fileset dir="." includes="bin/**,TestProject/**" excludes="TestProject/src/**,TestProject/dist/**,TestProject/build/**,TestProject/lib/**,TestProject/JavaSE.jar,TestProject/CodenameOneBuildClient.jar,TestProject/UWPProject/UWPApp/AppPackages/**,TestProject/UWPProject/UWPApp/bin/**,TestProject/UWPProject/UWPApp/lib/**,TestProject/UWPProject/UWPApp/obj/**,TestProject/UWPProject/UWPApp/Assets/**"/>
         </zip>
-        <ant dir="ikvm-uwp/ikvm-winrt-v3" target="create-release-zip" inheritall="false"/>
-        <copy file="ikvm-uwp/ikvm-winrt-v3/dist/ikvm.zip" tofile="dist/ikvm.zip"/>
+        <ant dir="${ikvm.relpath}" target="create-release-zip" inheritall="false"/>
+        <copy file="${ikvm.relpath}/dist/ikvm.zip" tofile="dist/ikvm.zip"/>
         
         <property name="build.daemon.dir" location="C:\Users\steve\OneDrive\Documents\cn1_files\incubator\codenameone-svn\BuildDaemon"/>
         <copy file="dist/uwpwrapper.zip" tofile="${build.daemon.dir}/uwpwrapper.zip"/>

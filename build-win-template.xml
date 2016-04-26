@@ -8,12 +8,24 @@
         <echo message="UWP Port Dir: ${uwp.port.dir}"/>
         <property name="msbuild.path" location="C:\Program Files (x86)\MSBuild\14.0\Bin\\MSBuild.exe"/>
         <property name="build.configuration" value="Release"/>
-        <property name="appxbundle.platforms" value="x64"/>
+        <property name="appxbundle.platforms" value="x86|x64|ARM"/>
+        <script language="javascript"><![CDATA[
+            var platforms = UWPTemplate.getProperty("build.platform");
+            if (!platforms) {
+                platforms = UWPTemplate.getProperty("appxbundle.platforms");
+                if (platforms.indexOf('|') > 0) {
+                    UWPTemplate.setProperty("build.platform", platforms.substring(0, platforms.indexOf('|')));
+                } else {
+                    UWPTemplate.setProperty("build.platform", platforms);
+                }
+            }
+            
+        ]]></script>
         <taskdef name="generateVS2015Project" 
                  classname="com.codename1.build.uwp.GenerateVS2015Project"
                  classpath="${uwp.port.dir}/bin/CN1UWPPort.jar"
         />
-        <condition property="msbuild.usenativetoolchain" value="UseDotNetNativeToolchain=false;BuildAppxUploadPackageForUap=true;" else="">
+        <condition property="msbuild.usenativetoolchain" value="UseDotNetNativeToolchain=true;UseDotNetNativeSharedAssemblyFrameworkPackage=true;BuildAppxUploadPackageForUap=true;" else="">
             <equals arg1="${build.configuration}" arg2="Release"/>
         </condition>
     </target>
@@ -37,7 +49,7 @@
             <arg value="${csproj.path}"/>
             <!--<arg value="/p:Configuration=Release"/>
             <arg value="/p:Platform=x64"/>-->
-            <arg value="/p:Configuration=${build.configuration};${msbuild.usenativetoolchain}Platform=${appxbundle.platforms};AppxBundle=Always;AppxBundlePlatforms=${appxbundle.platforms}"/>
+            <arg value="/p:Configuration=${build.configuration};${msbuild.usenativetoolchain}Platform=${build.platform};AppxBundle=Always;AppxBundlePlatforms=${appxbundle.platforms}"/>
         </exec>
     </target>
 
