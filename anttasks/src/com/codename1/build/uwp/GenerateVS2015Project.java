@@ -36,9 +36,12 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.taskdefs.Copy;
 import org.apache.tools.ant.taskdefs.ExecTask;
+import org.apache.tools.ant.taskdefs.Java;
 import org.apache.tools.ant.taskdefs.Unpack;
 import org.apache.tools.ant.taskdefs.Zip;
 import org.apache.tools.ant.taskdefs.optional.PropertyFile;
+import org.apache.tools.ant.types.Environment;
+import org.apache.tools.ant.types.Environment.Variable;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.ZipFileSet;
@@ -605,6 +608,35 @@ public class GenerateVS2015Project extends Task {
 
             zip.execute();
             */
+            
+            // To work around a bug in the DotNet native toolchain we need to convert 
+            // all java classes so that synchronized methods don't contain try/catch
+            // blocks.
+            
+            log("Preprocessing "+combinedJar.getAbsolutePath()+" to work around DotNetNative Toolchain bugs...");
+            Java preprocess = (Java)getProject().createTask("java");
+            preprocess.setClassname("com.codename1.tools.ikvm.IKVMClassPreprocessor");
+            Variable v = new Variable();
+            v.setKey("preprocessor.class.path");
+            //StringBuilder cpBuilder = new StringBuilder();
+            List<String> cpParts = new ArrayList<String>();
+            for (File cpPart : inputs) {
+                cpParts.add(cpPart.getAbsolutePath());
+            }
+            String processorCPath = String.join(File.pathSeparator, cpParts);
+            v.setValue(processorCPath);
+            
+            preprocess.addSysproperty(v);
+            Variable verifyProp = new Variable();
+            verifyProp.setKey("verify");
+            verifyProp.setValue("true");
+            preprocess.addSysproperty(verifyProp);
+            Path preprocessJarPath = new Path(getProject(), new File(ikvmDir, "IKVMClassPreprocessor" + File.separator + "bin" + File.separator + "IKVMClassPreprocessor.jar").getAbsolutePath());
+            preprocess.setClasspath(preprocessJarPath);
+            preprocess.setArgs(combinedJar.getAbsolutePath());
+            preprocess.setFailonerror(true);
+            preprocess.setFork(false);
+            preprocess.execute();
         }
         
         /*
@@ -682,6 +714,7 @@ public class GenerateVS2015Project extends Task {
     
     
     private void mergeZips(File output, FilenameFilter filter, File... inputs) throws IOException {
+        
         ZipOutputStream zOut = new ZipOutputStream(new FileOutputStream(output));
         byte[] buffer = new byte[4096*1024];
         HashSet<String> addedPaths = new HashSet<String>();
@@ -709,9 +742,10 @@ public class GenerateVS2015Project extends Task {
                         }
                         zOut.closeEntry();
                     }
+                    
 
                 }
-                
+                original.close();
 
             }
         } finally {
