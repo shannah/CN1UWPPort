@@ -193,10 +193,10 @@ public class GenerateVS2015Project extends Task {
         
         File[] ikvmDlls = new File[]{
             new File(ikvmDir, "bin/IKVM.Runtime.dll"),
-            new File(ikvmDir, "bin/IKVM.Reflection.dll"),
             new File(ikvmDir, "bin/IKVM.OpenJDK.Core.dll"),
             new File(ikvmDir, "bin/IKVM.OpenJDK.Text.dll"),
-            new File(ikvmDir, "bin/IKVM.OpenJDK.Util.dll")
+            new File(ikvmDir, "bin/IKVM.OpenJDK.Util.dll"),
+            new File(ikvmDir, "bin/IKVM.OpenJDK.Security.dll")
         };
         
         File[] ikvmDllDests = new File[]{
@@ -204,7 +204,8 @@ public class GenerateVS2015Project extends Task {
             new File(destDllFile.getParentFile(), "IKVM.Reflection.dll"),
             new File(destDllFile.getParentFile(), "IKVM.OpenJDK.Core.dll"),
             new File(destDllFile.getParentFile(), "IKVM.OpenJDK.Text.dll"),
-            new File(destDllFile.getParentFile(), "IKVM.OpenJDK.Util.dll")
+            new File(destDllFile.getParentFile(), "IKVM.OpenJDK.Util.dll"),
+            new File(destDllFile.getParentFile(), "IKVM.OpenJDK.Security.dll")
         };
         
         for (int i=0; i<ikvmDlls.length; i++) {
