@@ -201,7 +201,6 @@ public class GenerateVS2015Project extends Task {
         
         File[] ikvmDllDests = new File[]{
             new File(destDllFile.getParentFile(), "IKVM.Runtime.dll"),
-            new File(destDllFile.getParentFile(), "IKVM.Reflection.dll"),
             new File(destDllFile.getParentFile(), "IKVM.OpenJDK.Core.dll"),
             new File(destDllFile.getParentFile(), "IKVM.OpenJDK.Text.dll"),
             new File(destDllFile.getParentFile(), "IKVM.OpenJDK.Util.dll"),
