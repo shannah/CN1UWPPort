@@ -186,8 +186,10 @@
     
     
     <target name="create-uwp-wrapper" depends="get-ikvm" description="Generates the UWPWrapper.zip file">
+        <delete file="dist/uwpwrapper.zip"/>
+        <delete file="dist/ikvm.zip"/>
         <zip file="dist/uwpwrapper.zip">
-            <fileset dir="." includes="bin/**,TestProject/**" excludes="TestProject/src/**,TestProject/dist/**,TestProject/build/**,TestProject/lib/**,TestProject/JavaSE.jar,TestProject/CodenameOneBuildClient.jar,TestProject/UWPProject/UWPApp/AppPackages/**,TestProject/UWPProject/UWPApp/bin/**,TestProject/UWPProject/UWPApp/lib/**,TestProject/UWPProject/UWPApp/obj/**,TestProject/UWPProject/UWPApp/Assets/**"/>
+            <fileset dir="." includes="bin/**,TestProject/**" excludes="TestProject/UWPProject/UWPApp/repro*/**,TestProject/src/**,TestProject/dist/**,TestProject/build/**,TestProject/lib/**,TestProject/JavaSE.jar,TestProject/CodenameOneBuildClient.jar,TestProject/UWPProject/UWPApp/AppPackages/**,TestProject/UWPProject/UWPApp/bin/**,TestProject/UWPProject/UWPApp/lib/**,TestProject/UWPProject/UWPApp/obj/**,TestProject/UWPProject/UWPApp/Assets/**"/>
         </zip>
         <ant dir="${ikvm.relpath}" target="create-release-zip" inheritall="false"/>
         <copy file="${ikvm.relpath}/dist/ikvm.zip" tofile="dist/ikvm.zip"/>
