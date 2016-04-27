@@ -7,8 +7,9 @@
         <echo message="IKVM Dir: ${ikvm.dir}"/>
         <echo message="UWP Port Dir: ${uwp.port.dir}"/>
         <property name="msbuild.path" location="C:\Program Files (x86)\MSBuild\14.0\Bin\\MSBuild.exe"/>
-        <property name="build.configuration" value="Release"/>
+        <property name="build.configuration" value="Debug"/>
         <property name="appxbundle.platforms" value="x86|x64|ARM"/>
+        <!--<property name="build.platform" value="x64"/>-->
         <script language="javascript"><![CDATA[
             var platforms = UWPTemplate.getProperty("build.platform");
             if (!platforms) {
@@ -25,9 +26,13 @@
                  classname="com.codename1.build.uwp.GenerateVS2015Project"
                  classpath="${uwp.port.dir}/bin/CN1UWPPort.jar"
         />
-        <condition property="msbuild.usenativetoolchain" value="UseDotNetNativeToolchain=true;UseDotNetNativeSharedAssemblyFrameworkPackage=true;BuildAppxUploadPackageForUap=true;" else="">
+        <property name="UseDotNetNativeToolchain" value="true"/>
+        <property name="UseDotNetNativeSharedAssemblyFrameworkPackage" value="true"/>
+        <condition property="msbuild.usenativetoolchain" value="UseDotNetNativeToolchain=${UseDotNetNativeToolchain};UseDotNetNativeSharedAssemblyFrameworkPackage=${UseDotNetNativeSharedAssemblyFrameworkPackage};BuildAppxUploadPackageForUap=true;UapAppxPackageBuildMode=CI;" else="">
             <equals arg1="${build.configuration}" arg2="Release"/>
         </condition>
+        <echo message="Build configuration is ${build.configuration}"/>
+        <echo message="DotNetNative Toolchain Properties ${msbuild.usenativetoolchain}"/>
     </target>
     <target name="create-uwp-project-nojar" depends="init-uwp">
         
