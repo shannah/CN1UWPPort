@@ -328,15 +328,27 @@ public class GenerateVS2015Project extends Task {
             }
         }
         
-        
-        String certCN = findCertCN(pfxFile);
+        Cert cert = findCertCN(pfxFile);
+        String certCN = cert.cn;
         if (certCN == null) {
             throw new BuildException("Invalid key file supplied.  Failed to find the Cert CN");
-            
-            
+        }
+        if (cert.hash == null) {
+            throw new BuildException("Invalid cert hash");
         }
         
+        log("Updating csproj file");
+        String[] csprojReplacements = new String[]{
+            "<PackageCertificateThumbprint>.*</PackageCertificateThumbprint>",
+            "<PackageCertificateThumbprint>"+cert.hash+"</PackageCertificateThumbprint>"
+        };
         
+        try {
+            replaceInFile(csProjFile, csprojReplacements);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            throw new BuildException("Failed to update csproj file.", ex);
+        }
         
         log("Updating appxmanifest");
         File appxManifest = new File(uwpAppDir, "Package.appxmanifest");
@@ -780,7 +792,13 @@ public class GenerateVS2015Project extends Task {
         return tmp;
     }
     
-    private String findCertCN(File pfxFile) {
+    
+    private static class Cert {
+        String cn;
+        String hash;
+    }
+    
+    private Cert findCertCN(File pfxFile) {
         //File pfxFile = new File(uwpAppDir, "UWPApp_StoreKey.pfx");
         ExecTask certUtilExec = (ExecTask)getProject().createTask("exec");
         certUtilExec.setExecutable("certutil");
@@ -795,12 +813,20 @@ public class GenerateVS2015Project extends Task {
         } else {
             log("Cert Contents: "+certContents);
         }
+        Cert cert = new Cert();
+        
         Pattern p =Pattern.compile("(?m)^Subject: CN=(.*)$");
         Matcher m = p.matcher(certContents);
         if (m.find()) {
-            return m.group(1);
+            cert.cn = m.group(1);
         }
-        return null;
+        
+        p =Pattern.compile("(?m)^Cert Hash\\(sha1\\):(.*)$");
+        m = p.matcher(certContents);
+        if (m.find()) {
+            cert.hash = m.group(1).replaceAll("[^0-9a-f]", "");
+        }
+        return cert;
     }
     
     private void updateBuildVersion(String version) {
