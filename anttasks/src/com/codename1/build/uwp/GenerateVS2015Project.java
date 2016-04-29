@@ -258,12 +258,33 @@ public class GenerateVS2015Project extends Task {
         }
         sb.append("</ItemGroup><!-- END CN1 RESOURCES -->\n");
         
+        
         log("Adding resources to visual studio project");
         try {
             replaceAllInFile(csProjFile, "(?s)<!-- CN1 RESOURCES -->.*<!-- END CN1 RESOURCES -->", "");
             replaceInFileLiteral(csProjFile, "</Project>", sb.toString()+"\n</Project>");
         } catch (IOException ex) {
             throw new BuildException("Failed to add resource to csproj file", ex);
+        }
+        
+        
+        sb = new StringBuilder();
+        sb.append("<!-- CN1 SOURCES -->");
+        
+        List<File> sourceFiles = listFilesRecursive(new File(uwpAppDir, "src" ), new ArrayList<File>());
+        /*<Compile Include="src\AsyncPictureDecoderExtension.cs" />*/
+        List<String> sourcePaths = getRelativePaths(uwpAppDir, sourceFiles, new ArrayList<String>());
+        for (String srcPath : sourcePaths) {
+            sb.append("<Compile Include=\"").append(srcPath.replaceAll("/", "\\")).append("\"/>\r\n");
+        }
+        sb.append("<!-- END CN1 SOURCES -->");
+        
+        log("Adding sources to visual studio project");
+        try {
+            replaceAllInFile(csProjFile, "(?s)<!-- CN1 SOURCES -->.*<!-- END CN1 SOURCES -->", sb.toString());
+            
+        } catch (IOException ex) {
+            throw new BuildException("Failed to add source to csproj file", ex);
         }
         
         log("Updating bootstrap sources");
