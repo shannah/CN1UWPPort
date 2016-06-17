@@ -184,23 +184,20 @@
         <ant dir="${ikvm.relpath}" target="compile-runtime"/>
     </target>
     
+    <target name="copy-jar-to-bin" depends="jar" description="Copy jar to bin">
+        <copy file="dist/CN1UWPPort.jar" tofile="bin/CN1UWPPort.jar" overwrite="true"/>
+        
+    </target>
     
-    <target name="create-uwp-wrapper" depends="get-ikvm" description="Generates the UWPWrapper.zip file">
+    <target name="create-uwp-wrapper" depends="get-ikvm,configure" description="Generates the UWPWrapper.zip file">
         <delete file="dist/uwpwrapper.zip"/>
         <delete file="dist/ikvm.zip"/>
         <zip file="dist/uwpwrapper.zip">
-            <fileset dir="." includes="bin/**,TestProject/**" excludes="TestProject/UWPProject/UWPApp/repro*/**,TestProject/src/**,TestProject/dist/**,TestProject/build/**,TestProject/lib/**,TestProject/JavaSE.jar,TestProject/CodenameOneBuildClient.jar,TestProject/UWPProject/UWPApp/AppPackages/**,TestProject/UWPProject/UWPApp/bin/**,TestProject/UWPProject/UWPApp/lib/**,TestProject/UWPProject/UWPApp/obj/**,TestProject/UWPProject/UWPApp/Assets/**"/>
+            <fileset dir="." includes="bin/**,TestProject/**" excludes="TestProject/UWPProject/UWPApp/repro*/**,TestProject/src/**,TestProject/dist/**,TestProject/build/**,TestProject/lib/**,TestProject/JavaSE.jar,TestProject/UWPProject/UWPApp/AppPackages/**,TestProject/UWPProject/UWPApp/bin/**,TestProject/UWPProject/UWPApp/lib/**,TestProject/UWPProject/UWPApp/obj/**,TestProject/UWPProject/UWPApp/Assets/**"/>
         </zip>
         <ant dir="${ikvm.relpath}" target="create-release-zip" inheritall="false"/>
         <copy file="${ikvm.relpath}/dist/ikvm.zip" tofile="dist/ikvm.zip"/>
         
-        <property name="build.daemon.dir" location="C:\Users\steve\OneDrive\Documents\cn1_files\incubator\codenameone-svn\BuildDaemon"/>
-        <copy file="dist/uwpwrapper.zip" tofile="${build.daemon.dir}/uwpwrapper.zip"/>
-        <copy file="dist/ikvm.zip" tofile="${build.daemon.dir}/ikvm.zip"/>
-        <copy file="dist/uwpwrapper.zip" tofile="${build.daemon.dir}/src/uwpwrapper.zip"/>
-        <copy file="dist/ikvm.zip" tofile="${build.daemon.dir}/src/ikvm.zip"/>
-        <copy file="dist/uwpwrapper.zip" tofile="${build.daemon.dir}/build/classes/uwpwrapper.zip"/>
-        <copy file="dist/ikvm.zip" tofile="${build.daemon.dir}/build/classes/ikvm.zip"/>
         
     </target>
 </project>

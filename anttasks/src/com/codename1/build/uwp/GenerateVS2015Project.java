@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -252,7 +253,7 @@ public class GenerateVS2015Project extends Task {
         sb.append("<!-- CN1 RESOURCES --><ItemGroup>\n");
                 
         for (String resPath : resourcePaths) {
-            sb.append("   <Content Include=\"").append(resPath.replaceAll("/", "\\")).append("\">\r\n")
+            sb.append("   <Content Include=\"").append(resPath.replace("/", "\\")).append("\">\r\n")
                     .append("       <CopyToOutputDirectory>Always</CopyToOutputDirectory>\r\n")
                     .append("    </Content>");
         }
@@ -275,13 +276,15 @@ public class GenerateVS2015Project extends Task {
         /*<Compile Include="src\AsyncPictureDecoderExtension.cs" />*/
         List<String> sourcePaths = getRelativePaths(uwpAppDir, sourceFiles, new ArrayList<String>());
         for (String srcPath : sourcePaths) {
-            sb.append("<Compile Include=\"").append(srcPath.replaceAll("/", "\\")).append("\"/>\r\n");
+            System.out.println("Aeeting src path "+srcPath);
+            sb.append("<Compile Include=\"").append(srcPath.replace("/", "\\")).append("\"/>\r\n");
         }
         sb.append("<!-- END CN1 SOURCES -->");
         
         log("Adding sources to visual studio project");
         try {
-            replaceAllInFile(csProjFile, "(?s)<!-- CN1 SOURCES -->.*<!-- END CN1 SOURCES -->", sb.toString());
+            replaceAllInFile(csProjFile, "(?s)<!-- CN1 SOURCES -->.*<!-- END CN1 SOURCES -->", "<!-- CN1 SOURCES --><!-- END CN1 SOURCES -->");
+            replaceInFileLiteral(csProjFile, "<!-- CN1 SOURCES --><!-- END CN1 SOURCES -->", sb.toString());
             
         } catch (IOException ex) {
             throw new BuildException("Failed to add source to csproj file", ex);
@@ -378,6 +381,7 @@ public class GenerateVS2015Project extends Task {
         String[] buildVersionParts = buildVersion.split("\\.");
         buildVersion = buildVersionParts[0] + "." + (Integer.parseInt(buildVersionParts[1])+1);
         updateBuildVersion(buildVersion);
+        System.out.println("About to do appxmanifest replacements");
         String[] appxManifestReplacements = new String[] {
             "<DisplayName>.*</DisplayName>", 
             "<DisplayName>"+p("codename1.displayName", null)+"</DisplayName>",
@@ -390,6 +394,9 @@ public class GenerateVS2015Project extends Task {
             
             "<Identity Name=\"[^\"]*\"", 
             "<Identity Name=\""+p("codename1.arg.uwp.appid", null)+"\"",
+            
+            "<mp:PhoneIdentity PhoneProductId=\"[^\"]*\"", 
+            "<mp:PhoneIdentity PhoneProductId=\""+uuid(p("codename1.arg.uwp.appid", ""))+"\"",
             
             "Publisher=\"CN=[^\"]*\"", 
             "Publisher=\"CN="+certCN+"\"",
@@ -473,6 +480,13 @@ public class GenerateVS2015Project extends Task {
         super.execute(); 
     }
     
+    private String uuid(String seed) {
+        try {
+            return UUID.nameUUIDFromBytes(seed.getBytes("UTF-8")).toString();
+        } catch (Exception ex) {
+            return "";
+        }
+    }
     
     private String p(String propertyName, String defaultValue) {
         String out = getProject().getProperty(propertyName);
@@ -531,6 +545,7 @@ public class GenerateVS2015Project extends Task {
         FileWriter fios = new FileWriter(sourceFile);
         String str = new String(data);
         for (int i=0; i<replacements.length; i+=2) {
+            System.out.println("Replacing "+replacements[i]+" with "+replacements[i+1]);
             str = str.replaceFirst(replacements[i], replacements[i+1]);
         }
         fios.write(str);
