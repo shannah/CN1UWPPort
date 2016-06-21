@@ -19,9 +19,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -377,6 +379,92 @@ public class GenerateVS2015Project extends Task {
         log("Updating appxmanifest");
         File appxManifest = new File(uwpAppDir, "Package.appxmanifest");
         
+        String[] uapCapabilities = new String[]{
+            "musicLibrary",
+            "picturesLibrary",
+            "videosLibrary",
+            "removableStorage",
+            "appointments",
+            "contacts",
+            "phoneCall",
+            "userAccountInformation",
+            "voipCall",
+            "objects3D",
+            "chat"
+            
+            
+        };
+        
+        HashSet<String> uapCapabilitiesSet = new HashSet<String>(Arrays.asList(uapCapabilities));
+        
+        String[] capabilities = new String[]{
+            "codeGeneration",
+            "allJoyn",
+            "privateNetworkClientServer",
+            "internetClient",
+            "internetClientServer",
+            "phoneCallHistoryPublic",
+            "recordedCallsFolder"
+            
+        };
+        
+        HashSet<String> capabilitiesSet = new HashSet<String>(Arrays.asList(capabilities));
+        
+        String[] iotCapabilities = new String[] {
+            "lowLevelDevices",
+            "systemManagement"
+            
+        };
+        
+        HashSet<String> iotCapabilitiesSet = new HashSet<String>(Arrays.asList(iotCapabilities));
+        
+        String[] deviceCapabilities = {
+            "location",
+            "microphone",
+            "proximity",
+            "webcam",
+            "usb",
+            "humaninterfacedevice",
+            "pointOfService",
+            "bluetooth",
+            "wiFiControl",
+            "radios",
+            "optical",
+            "activity"
+        };
+        
+        
+        HashSet<String> deviceCapabilitiesSet = new HashSet<String>(Arrays.asList(deviceCapabilities));
+        
+        Set<String> enabledCapabilitiesSet = new HashSet<String>();
+        for (String s : new String[]{"musicLibrary", "picturesLibrary", "videosLibrary", "internetClient"}) {
+            enabledCapabilitiesSet.add(s);
+        }
+        for (String s : p("uwp.capabilities", "").split(",")) {
+            s = s.trim();
+            enabledCapabilitiesSet.add(s);
+        }
+        for (String s : p("uwp.capabilities", "").split(",")) {
+            s = s.trim();
+            enabledCapabilitiesSet.remove(s);
+        }
+        
+        StringBuilder csb = new StringBuilder();
+        for (String s : enabledCapabilitiesSet) {
+            if (uapCapabilitiesSet.contains(s)) {
+                csb.append("<uap:Capability Name=\"").append(s).append("\"/>");
+            } else if (deviceCapabilitiesSet.contains(s)) {
+                csb.append("<DeviceCapability Name=\"").append(s).append("\"/>");
+            } else if (capabilitiesSet.contains(s)) {
+                 csb.append("<Capability Name=\"").append(s).append("\"/>");
+            } else if (iotCapabilitiesSet.contains(s)) {
+                csb.append("<iot:Capability Name=\"").append(s).append("\"/>");
+            } else {
+                throw new BuildException("Capabilitiy "+s+" is not currently supported.");
+            }
+        }
+        
+        
         String buildVersion = p("codename1.arg.uwp.build.version", "0.0");
         String[] buildVersionParts = buildVersion.split("\\.");
         buildVersion = buildVersionParts[0] + "." + (Integer.parseInt(buildVersionParts[1])+1);
@@ -402,7 +490,12 @@ public class GenerateVS2015Project extends Task {
             "Publisher=\"CN="+certCN+"\"",
             
             "(<Identity [^>]*Version=\")([^\"]+)",
-            "$1"+p("codename1.version", "1.0")+"."+buildVersion
+            "$1"+p("codename1.version", "1.0")+"."+buildVersion,
+            
+            "<Capabilities>.*</Capabilities>",
+            "<Capabilities>"+csb.toString()+"</Capabilities>"
+                
+               
         };
         
         try {
@@ -917,4 +1010,36 @@ public class GenerateVS2015Project extends Task {
     }
     
     
+    private String createList(String included, String excluded) {
+        String[] includedArr = included.split(",");
+        String[] excludedArr = excluded.split(",");
+        String[] resArr = createList(includedArr, excludedArr);
+        StringBuilder sb = new StringBuilder();
+        for (String s : resArr) {
+            sb.append(s).append(",");
+        }
+        if (sb.length() > 0) {
+            return sb.substring(0, sb.length()-1);
+        } else {
+            return "";
+        }
+    }
+    
+    private String[] createList(String[] included, String[] excluded) {
+        List<String> out = new ArrayList<String>();
+        for (int i = 0; i< included.length; i++) {
+            included[i] = included[i].trim();
+        }
+        for (int i=0; i < excluded.length; i++) {
+            excluded[i] = excluded[i].trim();
+        }
+        
+        List<String> excludedList = Arrays.asList(excluded);
+        for (String s : included) {
+            if (!excludedList.contains(s)) {
+                out.add(s);
+            }
+        }
+        return out.toArray(new String[out.size()]);
+    }
 }
