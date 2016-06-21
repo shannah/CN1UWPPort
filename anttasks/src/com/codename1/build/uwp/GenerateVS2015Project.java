@@ -467,7 +467,7 @@ public class GenerateVS2015Project extends Task {
         
         String buildVersion = p("codename1.arg.uwp.build.version", "0.0");
         String[] buildVersionParts = buildVersion.split("\\.");
-        buildVersion = buildVersionParts[0] + "." + (Integer.parseInt(buildVersionParts[1])+1);
+        buildVersion = (Integer.parseInt(buildVersionParts[0])+1) + "." + buildVersionParts[1];
         updateBuildVersion(buildVersion);
         System.out.println("About to do appxmanifest replacements");
         String[] appxManifestReplacements = new String[] {

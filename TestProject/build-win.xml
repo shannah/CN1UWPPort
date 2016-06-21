@@ -28,9 +28,9 @@
                  classname="com.codename1.build.uwp.GenerateVS2015Project"
                  classpath="${uwp.port.dir}/bin/CN1UWPPort.jar"
         />
-        <property name="UseDotNetNativeToolchain" value="true"/>
+        <property name="UseDotNetNativeToolchain" value="false"/>
         <property name="UseDotNetNativeSharedAssemblyFrameworkPackage" value="true"/>
-        <condition property="msbuild.usenativetoolchain" value="UseDotNetNativeToolchain=${UseDotNetNativeToolchain};UseDotNetNativeSharedAssemblyFrameworkPackage=${UseDotNetNativeSharedAssemblyFrameworkPackage};BuildAppxUploadPackageForUap=true;UapAppxPackageBuildMode=CI;" else="">
+        <condition property="msbuild.usenativetoolchain" value="UseDotNetNativeToolchain=${UseDotNetNativeToolchain};UseDotNetNativeSharedAssemblyFrameworkPackage=${UseDotNetNativeSharedAssemblyFrameworkPackage};BuildAppxUploadPackageForUap=true;UapAppxPackageBuildMode=CI;" else="UseDotNetNativeToolchain=${UseDotNetNativeToolchain};UseDotNetNativeSharedAssemblyFrameworkPackage=${UseDotNetNativeSharedAssemblyFrameworkPackage};BuildAppxUploadPackageForUap=true;">
             <equals arg1="${build.configuration}" arg2="Release"/>
         </condition>
         <echo message="Build configuration is ${build.configuration}"/>
@@ -64,7 +64,21 @@
             <arg value="${csproj.path}"/>
             <!--<arg value="/p:Configuration=Release"/>
             <arg value="/p:Platform=x64"/>-->
-            <arg value="/p:Configuration=${build.configuration};${msbuild.usenativetoolchain}Platform=${build.platform};AppxBundle=Always;AppxBundlePlatforms=${appxbundle.platforms}"/>
+            <!-- We'll always do release builds because on the build server it makes the most sense.. E.g. you can run WACK on them.-->
+            <arg value="/p:Configuration=Release;${msbuild.usenativetoolchain}Platform=${build.platform};AppxBundle=Always;AppxBundlePlatforms=${appxbundle.platforms}"/>
+        </exec>
+    </target>
+    
+    <target name="msbuild" depends="init-uwp">
+        <property name="solution.path" location="UWPProject/UWPApp.sln"/>
+        <property name="csproj.path" location="UWPProject/UWPApp/UWPApp.csproj"/>
+        <echo message="Building project ${csproj.path}"/>
+        <exec executable="${msbuild.path}" failonerror="true">
+            <arg value="${csproj.path}"/>
+            <!--<arg value="/p:Configuration=Release"/>
+            <arg value="/p:Platform=x64"/>-->
+            <!-- We'll always do release builds because on the build server it makes the most sense.. E.g. you can run WACK on them.-->
+            <arg value="/p:Configuration=Release;${msbuild.usenativetoolchain}Platform=${build.platform};AppxBundle=Always;AppxBundlePlatforms=${appxbundle.platforms}"/>
         </exec>
     </target>
 
