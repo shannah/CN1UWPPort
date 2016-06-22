@@ -18,6 +18,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -354,8 +358,17 @@ public class GenerateVS2015Project extends Task {
             }
         }
         
+        if (!"".equals(p("uwp.certificatePassword", "").trim())) {
+            getProject().log("Opening certificate...");
+            removePfxPassword(pfxFile, p("uwp.certificatePassword", ""));
+            getProject().log("Certificate cleaned");
+        }
+        
         Cert cert = findCertCN(pfxFile);
         String certCN = cert.cn;
+        if (p("uwp.PublisherIdentity", null) != null) {
+            certCN = p("uwp.PublisherIdentity", null);
+        }
         if (certCN == null) {
             throw new BuildException("Invalid key file supplied.  Failed to find the Cert CN");
         }
@@ -927,12 +940,130 @@ public class GenerateVS2015Project extends Task {
         String hash;
     }
     
+    
+    private void removePfxPassword(File pfxFile, String password) {
+        FileInputStream fis = null;
+        FileOutputStream fout = null;
+        try {
+            fis = new FileInputStream(pfxFile);
+            KeyStore keystore = KeyStore.getInstance("PKCS12");
+            keystore.load(fis, password.toCharArray());
+            Enumeration<String> aliases = keystore.aliases();
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                try {
+                    Key key = keystore.getKey(alias, password.toCharArray());
+                    
+                    keystore.setKeyEntry(alias, key, new char[0], keystore.getCertificateChain(alias));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            // Saving the keystore with a zero length password
+            fout = new FileOutputStream(pfxFile);
+            keystore.store(fout, new char[0]);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (Throwable t){}
+            }
+            if (fout != null) {
+                try {
+                    fout.close();
+                } catch (Throwable t){}
+            }
+        }
+    }
+    
+    private void removePfxPassword2(File pfxFile, String password) {
+        File keyTool = new File(System.getProperty("java.home") + File.separator + "bin" + File.separator + "keytool");
+        if (!keyTool.exists()) {
+            keyTool = new File(System.getProperty("java.home") + File.separator + "bin" + File.separator + "keytool.exe");
+        }
+        try {
+            /*
+            keytool -importkeystore -srckeystore thekeystore.jks \
+            -srcstoretype JKS \
+            -destkeystore thekeystore.pfx \
+            -deststoretype PKCS12
+            */
+            String pfxName = pfxFile.getName();
+            File newFile = new File(pfxFile.getParent(), pfxName+".new");
+            ProcessBuilder pb = new ProcessBuilder(keyTool.getAbsolutePath(),
+                    "-importkeystore", "-srckeystore", pfxFile.getAbsolutePath(), "-srcstoretype", "PKCS12", 
+                    "-destkeystore", newFile.getAbsolutePath(), "-deststoretype", "PKCS12", 
+                    "-srcstorepass", password, "-srckeypass", password, "-noprompt", "-v", "-deststorepass", "");
+
+            getProject().log("Starting keytool process");
+            Process p = pb.start();
+            getProject().log("Waiting for keytool process");
+            int res = p.waitFor();
+            getProject().log("Keytool process started");
+            //error occured
+            if(res > 0){
+                StringBuilder msg = new StringBuilder();
+                final InputStream input = p.getInputStream();
+                final InputStream stream = p.getErrorStream();
+                try {
+                    byte[] buffer = new byte[8192];
+                    int i = input.read(buffer);
+                    while (i > -1) {
+                        String str = new String(buffer, 0, i);
+                        System.out.print(str);
+                        msg.append(str);
+                        i = stream.read(buffer);
+                    }
+                    i = stream.read(buffer);
+                    while (i > -1) {
+                        String str = new String(buffer, 0, i);
+                        System.out.print(str);
+                        msg.append(str);
+                        i = stream.read(buffer);
+                    }
+                    if(msg.length() > 0){
+                        getProject().log("Error Occured removing password from certificate: " + msg.toString());
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+                throw new BuildException("Failed to remove password from certificate");
+            }
+
+            getProject().log("Finished keytool");
+            if (newFile.exists()) {
+                getProject().log("Deleting old pfxFile");
+                pfxFile.delete();
+                getProject().log("Moving new pfxFile to old location");
+                newFile.renameTo(pfxFile);
+            } else {
+                throw new BuildException("Failed to create new keystore");
+            }
+
+        } catch (Exception err) {
+            err.printStackTrace();
+            throw new BuildException(err);
+        }
+            
+        
+    }
+    
     private Cert findCertCN(File pfxFile) {
         //File pfxFile = new File(uwpAppDir, "UWPApp_StoreKey.pfx");
         ExecTask certUtilExec = (ExecTask)getProject().createTask("exec");
-        certUtilExec.setExecutable("certutil");
+            certUtilExec.setExecutable("certutil");
+            
+        //if (!"".equals(p("uwp.certificatePassword", "").trim())) {
+        //    certUtilExec.createArg().setValue("-p");
+        //    certUtilExec.createArg().setValue(p("uwp.certificatePassword", null));
+        //}
         certUtilExec.createArg().setValue("-dump");
         certUtilExec.createArg().setValue(pfxFile.getAbsolutePath());
+        
         certUtilExec.setOutputproperty("cert.contents");
         certUtilExec.execute();
         String certContents = getProject().getProperty("cert.contents");
@@ -948,6 +1079,10 @@ public class GenerateVS2015Project extends Task {
         Matcher m = p.matcher(certContents);
         if (m.find()) {
             cert.cn = m.group(1);
+            if (cert.cn.indexOf(",") > 0) {
+                cert.cn = cert.cn.substring(0, cert.cn.indexOf(","));
+            }
+            cert.cn = cert.cn.trim();
         }
         
         p =Pattern.compile("(?m)^Cert Hash\\(sha1\\):(.*)$");
