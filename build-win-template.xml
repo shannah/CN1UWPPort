@@ -6,6 +6,8 @@
     <target name="init-uwp" depends="init">
         <echo message="IKVM Dir: ${ikvm.dir}"/>
         <echo message="UWP Port Dir: ${uwp.port.dir}"/>
+        <property name="nuget.path" location="C:\Program Files (x86)\nuget.exe"/>
+        <available file="${nuget.path}" property="nuget.installed"/>
         <property name="msbuild.path" location="C:\Program Files (x86)\MSBuild\14.0\Bin\\MSBuild.exe"/>
         <property name="build.configuration" value="Debug"/>
         <property name="appxbundle.platforms" value="x86|x64|ARM"/>
@@ -26,9 +28,9 @@
                  classname="com.codename1.build.uwp.GenerateVS2015Project"
                  classpath="${uwp.port.dir}/bin/CN1UWPPort.jar"
         />
-        <property name="UseDotNetNativeToolchain" value="true"/>
+        <property name="UseDotNetNativeToolchain" value="false"/>
         <property name="UseDotNetNativeSharedAssemblyFrameworkPackage" value="true"/>
-        <condition property="msbuild.usenativetoolchain" value="UseDotNetNativeToolchain=${UseDotNetNativeToolchain};UseDotNetNativeSharedAssemblyFrameworkPackage=${UseDotNetNativeSharedAssemblyFrameworkPackage};BuildAppxUploadPackageForUap=true;UapAppxPackageBuildMode=CI;" else="">
+        <condition property="msbuild.usenativetoolchain" value="UseDotNetNativeToolchain=${UseDotNetNativeToolchain};EnableGatekeeperAnalysis=false;UseDotNetNativeSharedAssemblyFrameworkPackage=${UseDotNetNativeSharedAssemblyFrameworkPackage};BuildAppxUploadPackageForUap=true;UapAppxPackageBuildMode=CI;" else="UseDotNetNativeToolchain=${UseDotNetNativeToolchain};EnableGatekeeperAnalysis=false;UseDotNetNativeSharedAssemblyFrameworkPackage=${UseDotNetNativeSharedAssemblyFrameworkPackage};">
             <equals arg1="${build.configuration}" arg2="Release"/>
         </condition>
         <echo message="Build configuration is ${build.configuration}"/>
@@ -46,7 +48,28 @@
     <target name="create-uwp-project" depends="jar,create-uwp-project-nojar" description="Create Universal Windows Platform project for this app">
     </target>
     
-    <target name="build-uwp-app-nojar" depends="create-uwp-project-nojar">
+    
+    
+    <target name="nuget-restore" depends="create-uwp-project" if="${nuget.installed}">
+        <exec executable="${nuget.path}" failonerror="true" dir="UWPProject/UWPApp">
+            <arg value="restore"/>
+        </exec>
+    </target>
+    
+    <target name="build-uwp-app-nojar" depends="create-uwp-project-nojar,nuget-restore">
+        <property name="solution.path" location="UWPProject/UWPApp.sln"/>
+        <property name="csproj.path" location="UWPProject/UWPApp/UWPApp.csproj"/>
+        <echo message="Building project ${csproj.path} for platform ${build.platform}"/>
+        <exec executable="${msbuild.path}" failonerror="true">
+            <arg value="${csproj.path}"/>
+            <!--<arg value="/p:Configuration=Release"/>
+            <arg value="/p:Platform=x64"/>-->
+            <!-- We'll always do release builds because on the build server it makes the most sense.. E.g. you can run WACK on them.-->
+            <arg value="/p:Configuration=Release;${msbuild.usenativetoolchain}Platform=${build.platform};AppxBundle=Always;AppxBundlePlatforms=${appxbundle.platforms}"/>
+        </exec>
+    </target>
+    
+    <target name="msbuild" depends="init-uwp">
         <property name="solution.path" location="UWPProject/UWPApp.sln"/>
         <property name="csproj.path" location="UWPProject/UWPApp/UWPApp.csproj"/>
         <echo message="Building project ${csproj.path}"/>
@@ -54,7 +77,8 @@
             <arg value="${csproj.path}"/>
             <!--<arg value="/p:Configuration=Release"/>
             <arg value="/p:Platform=x64"/>-->
-            <arg value="/p:Configuration=${build.configuration};${msbuild.usenativetoolchain}Platform=${build.platform};AppxBundle=Always;AppxBundlePlatforms=${appxbundle.platforms}"/>
+            <!-- We'll always do release builds because on the build server it makes the most sense.. E.g. you can run WACK on them.-->
+            <arg value="/p:Configuration=Release;${msbuild.usenativetoolchain}Platform=${build.platform};AppxBundle=Always;AppxBundlePlatforms=${appxbundle.platforms}"/>
         </exec>
     </target>
 

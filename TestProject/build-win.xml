@@ -30,7 +30,7 @@
         />
         <property name="UseDotNetNativeToolchain" value="false"/>
         <property name="UseDotNetNativeSharedAssemblyFrameworkPackage" value="true"/>
-        <condition property="msbuild.usenativetoolchain" value="UseDotNetNativeToolchain=${UseDotNetNativeToolchain};UseDotNetNativeSharedAssemblyFrameworkPackage=${UseDotNetNativeSharedAssemblyFrameworkPackage};BuildAppxUploadPackageForUap=true;UapAppxPackageBuildMode=CI;" else="UseDotNetNativeToolchain=${UseDotNetNativeToolchain};UseDotNetNativeSharedAssemblyFrameworkPackage=${UseDotNetNativeSharedAssemblyFrameworkPackage};BuildAppxUploadPackageForUap=true;">
+        <condition property="msbuild.usenativetoolchain" value="UseDotNetNativeToolchain=${UseDotNetNativeToolchain};EnableGatekeeperAnalysis=false;UseDotNetNativeSharedAssemblyFrameworkPackage=${UseDotNetNativeSharedAssemblyFrameworkPackage};BuildAppxUploadPackageForUap=true;UapAppxPackageBuildMode=CI;" else="UseDotNetNativeToolchain=${UseDotNetNativeToolchain};EnableGatekeeperAnalysis=false;UseDotNetNativeSharedAssemblyFrameworkPackage=${UseDotNetNativeSharedAssemblyFrameworkPackage};">
             <equals arg1="${build.configuration}" arg2="Release"/>
         </condition>
         <echo message="Build configuration is ${build.configuration}"/>
@@ -59,7 +59,7 @@
     <target name="build-uwp-app-nojar" depends="create-uwp-project-nojar,nuget-restore">
         <property name="solution.path" location="UWPProject/UWPApp.sln"/>
         <property name="csproj.path" location="UWPProject/UWPApp/UWPApp.csproj"/>
-        <echo message="Building project ${csproj.path}"/>
+        <echo message="Building project ${csproj.path} for platform ${build.platform}"/>
         <exec executable="${msbuild.path}" failonerror="true">
             <arg value="${csproj.path}"/>
             <!--<arg value="/p:Configuration=Release"/>
