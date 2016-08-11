@@ -51,6 +51,7 @@
     
     
     <target name="nuget-restore" depends="create-uwp-project" if="${nuget.installed}">
+        <echo>Restoring packages with nuget restore...</echo>
         <exec executable="${nuget.path}" failonerror="true" dir="UWPProject/UWPApp">
             <arg value="restore"/>
         </exec>
