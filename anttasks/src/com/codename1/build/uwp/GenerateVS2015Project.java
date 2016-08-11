@@ -256,7 +256,29 @@ public class GenerateVS2015Project extends Task {
     <None Include="UWPApp_StoreKey.pfx" />
     <None Include="UWPApp_TemporaryKey.pfx" />
   </ItemGroup>*/
-        sb.append("<!-- CN1 RESOURCES --><ItemGroup>\n");
+        sb.append("<!-- CN1 RESOURCES -->");
+        
+        HashSet<String> sdkReferences = new HashSet<String>();
+        sb.append("<ItemGroup>\n");
+        for (String sdk : p("uwp.sdkReferences", "").split(",")) {
+            sdk = sdk.trim();
+            if (sdk.length() == 0) {
+                continue;
+            }
+            sdkReferences.add(sdk);
+        }
+        for (String sdk : sdkReferences) {
+            if ("WindowsMobile".equals(sdk)) {
+                sb.append("<SDKReference Include=\"WindowsMobile, Version=10.0.10586.0\">\n" +
+                    "      <Name>Windows Mobile Extensions for the UWP</Name>\n" +
+                    "    </SDKReference>");
+            } else {
+                throw new BuildException("Unrecognized sdk reference "+sdk);
+            }
+        }
+        
+        sb.append("</ItemGroup>\n");
+        sb.append("<ItemGroup>\n");
                 
         for (String resPath : resourcePaths) {
             sb.append("   <Content Include=\"").append(resPath.replace("/", "\\")).append("\">\r\n")
@@ -455,28 +477,43 @@ public class GenerateVS2015Project extends Task {
         }
         for (String s : p("uwp.capabilities", "").split(",")) {
             s = s.trim();
+            if (s.length() == 0) {
+                continue;
+            }
             enabledCapabilitiesSet.add(s);
         }
-        for (String s : p("uwp.capabilities", "").split(",")) {
+        for (String s : p("uwp.capabilities.Disabled", "").split(",")) {
             s = s.trim();
+            if (s.length() == 0) {
+                continue;
+            }
             enabledCapabilitiesSet.remove(s);
         }
         
         StringBuilder csb = new StringBuilder();
+        
+        // For some stupid reason the capabilities must be grouped in order of 
+        // Capabilities, uap:Capabilities, DeviceCapabilities
+        StringBuilder sbCaps = new StringBuilder();
+        StringBuilder sbUapCaps = new StringBuilder();
+        StringBuilder devCaps = new StringBuilder();
+        StringBuilder iotCaps = new StringBuilder();
+        
+        
         for (String s : enabledCapabilitiesSet) {
             if (uapCapabilitiesSet.contains(s)) {
-                csb.append("<uap:Capability Name=\"").append(s).append("\"/>");
+                sbUapCaps.append("<uap:Capability Name=\"").append(s).append("\"/>");
             } else if (deviceCapabilitiesSet.contains(s)) {
-                csb.append("<DeviceCapability Name=\"").append(s).append("\"/>");
+                devCaps.append("<DeviceCapability Name=\"").append(s).append("\"/>");
             } else if (capabilitiesSet.contains(s)) {
-                 csb.append("<Capability Name=\"").append(s).append("\"/>");
+                 sbCaps.append("<Capability Name=\"").append(s).append("\"/>");
             } else if (iotCapabilitiesSet.contains(s)) {
-                csb.append("<iot:Capability Name=\"").append(s).append("\"/>");
+                iotCaps.append("<iot:Capability Name=\"").append(s).append("\"/>");
             } else {
                 throw new BuildException("Capabilitiy "+s+" is not currently supported.");
             }
         }
-        
+         csb.append(sbCaps).append(sbUapCaps).append(devCaps).append(iotCaps);
         
         String buildVersion = p("codename1.arg.uwp.build.version", "0.0");
         String[] buildVersionParts = buildVersion.split("\\.");
