@@ -529,6 +529,10 @@ public class GenerateVS2015Project extends Task {
         while (appVersion.length() > 0) {
             String vPart = (appVersion.indexOf('.') >= 0) ? appVersion.substring(0, appVersion.indexOf(".")) : appVersion;
             appVersion = (appVersion.indexOf('.') >= 0) ? appVersion.substring(appVersion.indexOf('.')+1) : "";
+            if (versionSb.length() > 0 && vPart.length() < 2) {
+                // All except first part should be two digits
+                vPart += "0";
+            }
             while (vPart.length() > 1 && vPart.charAt(0) == '0') {
                 vPart = vPart.substring(1);
             }
