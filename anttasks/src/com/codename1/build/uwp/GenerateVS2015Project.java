@@ -519,6 +519,28 @@ public class GenerateVS2015Project extends Task {
         String[] buildVersionParts = buildVersion.split("\\.");
         buildVersion = (Integer.parseInt(buildVersionParts[0])+1) + "." + buildVersionParts[1];
         updateBuildVersion(buildVersion);
+        String appVersion = p("codename1.version", "1.0");
+        
+        System.out.println("appVerison before processing: "+appVersion);
+        if (appVersion.indexOf(".") == -1) {
+            appVersion += ".0";
+        }
+        StringBuilder versionSb = new StringBuilder();
+        while (appVersion.length() > 0) {
+            String vPart = (appVersion.indexOf('.') >= 0) ? appVersion.substring(0, appVersion.indexOf(".")) : appVersion;
+            appVersion = (appVersion.indexOf('.') >= 0) ? appVersion.substring(appVersion.indexOf('.')+1) : "";
+            while (vPart.length() > 1 && vPart.charAt(0) == '0') {
+                vPart = vPart.substring(1);
+            }
+            versionSb.append(vPart).append(".");
+        }
+        
+        versionSb.append(buildVersion);
+        appVersion = versionSb.toString();
+        
+        
+        System.out.println("appVersion after processing: "+appVersion);
+        
         System.out.println("About to do appxmanifest replacements");
         String[] appxManifestReplacements = new String[] {
             "<DisplayName>.*</DisplayName>", 
@@ -540,7 +562,7 @@ public class GenerateVS2015Project extends Task {
             "Publisher=\"CN="+certCN+"\"",
             
             "(<Identity [^>]*Version=\")([^\"]+)",
-            "$1"+p("codename1.version", "1.0")+"."+buildVersion,
+            "$1"+appVersion,
             
             "<Capabilities>.*</Capabilities>",
             "<Capabilities>"+csb.toString()+"</Capabilities>"
