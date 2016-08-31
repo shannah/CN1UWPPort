@@ -17,6 +17,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 
 import java.security.Key;
@@ -705,14 +706,17 @@ public class GenerateVS2015Project extends Task {
         cp.execute();
     }
     
+    
+    
     public void replaceInFile(File sourceFile, String... replacements) throws IOException {
         
         DataInputStream dis = new DataInputStream(new FileInputStream(sourceFile));
         byte[] data = new byte[(int) sourceFile.length()];
         dis.readFully(data);
         dis.close();
-        FileWriter fios = new FileWriter(sourceFile);
-        String str = new String(data);
+        OutputStreamWriter fios = new OutputStreamWriter(new FileOutputStream(sourceFile), "UTF-8");
+        
+        String str = new String(data, "UTF-8");
         for (int i=0; i<replacements.length; i+=2) {
             System.out.println("Replacing "+replacements[i]+" with "+replacements[i+1]);
             str = str.replaceFirst(replacements[i], replacements[i+1]);
@@ -727,8 +731,8 @@ public class GenerateVS2015Project extends Task {
         byte[] data = new byte[(int) sourceFile.length()];
         dis.readFully(data);
         dis.close();
-        FileWriter fios = new FileWriter(sourceFile);
-        String str = new String(data);
+        OutputStreamWriter fios = new OutputStreamWriter(new FileOutputStream(sourceFile), "UTF-8");
+        String str = new String(data, "UTF-8");
         for (int i=0; i<replacements.length; i+=2) {
             str = str.replace(replacements[i], replacements[i+1]);
         }
@@ -741,8 +745,8 @@ public class GenerateVS2015Project extends Task {
         byte[] data = new byte[(int) sourceFile.length()];
         dis.readFully(data);
         dis.close();
-        FileWriter fios = new FileWriter(sourceFile);
-        String str = new String(data);
+        OutputStreamWriter fios = new OutputStreamWriter(new FileOutputStream(sourceFile), "UTF-8");
+        String str = new String(data, "UTF-8");
         for (int i=0; i<replacements.length; i+=2) {
             str = str.replaceAll(replacements[i], replacements[i+1]);
         }
