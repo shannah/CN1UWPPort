@@ -544,6 +544,8 @@ public class GenerateVS2015Project extends Task {
         appVersion = versionSb.toString();
         
         
+       
+        
         System.out.println("appVersion after processing: "+appVersion);
         
         System.out.println("About to do appxmanifest replacements");
@@ -570,7 +572,10 @@ public class GenerateVS2015Project extends Task {
             "$1"+appVersion,
             
             "<Capabilities>.*</Capabilities>",
-            "<Capabilities>"+csb.toString()+"</Capabilities>"
+            "<Capabilities>"+csb.toString()+"</Capabilities>",
+            
+            "<Extensions>.*</Extensions>",
+            "<Extensions>"+p("codename1.arg.uwp.extensions", "")+"</Extensions>"
                 
                
         };
