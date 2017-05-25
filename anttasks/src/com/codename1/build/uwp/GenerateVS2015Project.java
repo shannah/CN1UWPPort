@@ -857,6 +857,23 @@ public class GenerateVS2015Project extends Task {
             verifyProp.setKey("verify");
             verifyProp.setValue("true");
             preprocess.addSysproperty(verifyProp);
+            
+            // If injectDebug parameter is present, then we inject a tracer method
+            // into Java classes.
+            // See https://github.com/shannah/CN1UWPPort/wiki/Using-the-injectDebug-flag
+            if ("true".equals(p("codename1.arg.uwp.injectDebug", "false"))) {
+                log("Adding injectDebug property so that a tracer function will be called for every "
+                        + "line number of java source.");
+                log("***NOTE*** You should disable this option unless you plan to debug the sources inside Visual Studio and need "
+                        + "to track every line of original Java source.");
+                
+                Variable injectDebugProp = new Variable();
+                injectDebugProp.setKey("injectDebug");
+                injectDebugProp.setValue("true");
+                preprocess.addSysproperty(injectDebugProp);
+            }
+            
+            
             Path preprocessJarPath = new Path(getProject(), new File(ikvmDir, "IKVMClassPreprocessor" + File.separator + "bin" + File.separator + "IKVMClassPreprocessor.jar").getAbsolutePath());
             preprocess.setClasspath(preprocessJarPath);
             preprocess.setArgs(combinedJar.getAbsolutePath());
